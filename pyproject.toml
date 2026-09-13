@@ -14,7 +14,7 @@ authors = [{name = "Pete Baxter"}]
 datapack-wiki = "datapack_wiki.cli:main"
 
 [tool.setuptools.package-data]
-datapack_wiki = ["templates/*"]
+datapack_wiki = ["templates/*", "curation/*.json"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

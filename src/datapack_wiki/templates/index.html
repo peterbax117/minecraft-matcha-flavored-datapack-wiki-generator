@@ -14,6 +14,7 @@
 <button data-page="obtaining">Obtaining items</button>
 <button data-page="food">Food and effects</button>
 <button data-page="enchantments">Enchantments</button>
+<button data-page="blessings">Blessings</button>
 <button data-page="mechanics">Mechanics</button>
 <button data-page="overrides">Vanilla overrides</button>
 </nav>
@@ -61,7 +62,15 @@
 <button id="clear-food">Clear</button></div></div>
 <div class="stats" id="food-stats"></div><div id="food-results"></div><div id="food-pager" class="pager"></div></section>
 
-<section class="page" id="enchantments"><h1>Custom enchantments</h1><div id="enchantment-table"></div></section>
+<section class="page" id="enchantments"><h1>Custom enchantments</h1>
+<p class="sub">Behavior, activation, scaling, equipment, Blessings, and technical implementation.</p>
+<div class="searchbox"><label for="enchantment-search">Filter enchantments</label><div class="searchrow"><input id="enchantment-search" placeholder="Warding, armor, attack, tick..."><button id="clear-enchantments">Clear</button></div></div>
+<div class="stats" id="enchantment-stats"></div><div id="enchantment-results"></div></section>
+
+<section class="page" id="blessings"><h1>Blessings</h1>
+<p class="sub">Craftable prayer and elegy books containing related enchantments.</p>
+<div class="searchbox"><label for="blessing-search">Filter Blessings</label><div class="searchrow"><input id="blessing-search" placeholder="Prayer of Yamm, Aqua Affinity..."><button id="clear-blessings">Clear</button></div></div>
+<div class="stats" id="blessing-stats"></div><div id="blessing-results"></div></section>
 <section class="page" id="mechanics"><h1>Gameplay mechanics</h1><div id="mechanic-list"></div></section>
 <section class="page" id="overrides"><h1>Vanilla data overrides</h1><div id="override-table"></div></section>
 </main></div>

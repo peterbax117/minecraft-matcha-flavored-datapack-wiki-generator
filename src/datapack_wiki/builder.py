@@ -399,25 +399,119 @@ def build_items(pack: Pack, recipes: list[dict], foods: list[dict], acquisition:
     return sorted(items.values(), key=lambda item: item["name"].lower())
 
 
-def parse_enchantments(pack: Pack) -> list[dict]:
+def parse_blessings(pack: Pack, recipes: list[dict]) -> list[dict]:
+    blessings = []
+    for recipe in recipes:
+        if recipe["namespace"] != "blessings":
+            continue
+        stored = recipe.get("_components", {}).get("minecraft:stored_enchantments", {})
+        blessings.append(
+            {
+                "id": recipe["id"],
+                "name": recipe["resultName"],
+                "icon": recipe.get("icon"),
+                "recipeId": recipe["id"],
+                "enchantments": [
+                    {
+                        "id": normalize_id(enchantment_id),
+                        "name": enchantment_id.split(":")[-1].replace("_", " ").title(),
+                        "level": level,
+                    }
+                    for enchantment_id, level in stored.items()
+                ],
+                "source": recipe["source"],
+            }
+        )
+    return blessings
+
+
+def parse_enchantments(pack: Pack, recipes: list[dict], blessings: list[dict]) -> list[dict]:
     root = pack.data / "main/enchantment"
     result = []
     if not root.exists():
         return result
+    curation_path = PACKAGE_ROOT / "curation/matcha_enchantments.json"
+    curation = json.loads(curation_path.read_text(encoding="utf-8")) if curation_path.exists() else {}
+    recipe_equipment = defaultdict(list)
+    for recipe in recipes:
+        for enchantment_id, level in recipe.get("_components", {}).get("minecraft:enchantments", {}).items():
+            recipe_equipment[normalize_id(enchantment_id)].append(
+                {
+                    "name": recipe["resultName"],
+                    "itemId": recipe["resultId"],
+                    "itemKey": recipe.get("resultKey"),
+                    "recipeId": recipe["id"],
+                    "level": level,
+                }
+            )
+
+    def function_references(value):
+        found = set()
+        if isinstance(value, dict):
+            if value.get("type") == "minecraft:run_function" and value.get("function"):
+                found.add(normalize_id(value["function"]))
+            for child in value.values():
+                found.update(function_references(child))
+        elif isinstance(value, list):
+            for child in value:
+                found.update(function_references(child))
+        return found
+
     for path in sorted(root.glob("*.json")):
         raw = pack.read_json(path)
         items = raw.get("supported_items", [])
         items = [items] if isinstance(items, str) else items
+        enchantment_id = f"main:{path.stem}"
+        translated_name = pack.component_text(raw.get("description"))
+        fallback_name = re.sub(r"(?<=\D)(\d+)$", r" \1", path.stem.replace("_", " ").title())
+        has_private_glyph = any("\ue000" <= character <= "\uf8ff" for character in translated_name)
+        display_name = fallback_name if has_private_glyph else translated_name or fallback_name
+        functions = []
+        for function_id in sorted(function_references(raw.get("effects", {}))):
+            namespace, function_path = split_id(function_id)
+            source = pack.data / namespace / "function" / f"{function_path}.mcfunction"
+            commands = []
+            comments = []
+            if source.exists():
+                for line in source.read_text(encoding="utf-8").splitlines():
+                    stripped = line.strip()
+                    if stripped.startswith("#"):
+                        comments.append(stripped.removeprefix("#").strip())
+                    elif stripped:
+                        commands.append(stripped)
+            functions.append(
+                {
+                    "id": function_id,
+                    "source": f"data/{namespace}/function/{function_path}.mcfunction",
+                    "commands": commands,
+                    "comments": comments,
+                }
+            )
+        related_blessings = [
+            {"id": blessing["id"], "name": blessing["name"], "level": enchantment["level"]}
+            for blessing in blessings
+            for enchantment in blessing["enchantments"]
+            if enchantment["id"] == enchantment_id
+        ]
         result.append(
             {
-                "name": pack.component_text(raw.get("description")) or path.stem.replace("_", " ").title(),
-                "id": f"main:{path.stem}",
+                "name": display_name,
+                "inGameName": translated_name,
+                "id": enchantment_id,
                 "max": raw.get("max_level", "?"),
                 "slots": raw.get("slots", []),
                 "items": items,
                 "weight": raw.get("weight"),
                 "anvilCost": raw.get("anvil_cost"),
                 "effectTriggers": list(raw.get("effects", {})),
+                "functions": functions,
+                "equipment": recipe_equipment.get(enchantment_id, []),
+                "blessings": related_blessings,
+                "summary": curation.get(enchantment_id, {}).get("summary"),
+                "activation": curation.get(enchantment_id, {}).get("activation"),
+                "scaling": curation.get(enchantment_id, {}).get("scaling"),
+                "provenance": "curated from definition and function commands"
+                if enchantment_id in curation else "extracted from definition",
                 "source": f"data/main/enchantment/{path.name}",
             }
         )
@@ -702,7 +796,6 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
         pack = Pack(Path(temporary))
         recipes = parse_recipes(pack)
         foods = parse_food(pack, recipes)
-        enchantments = parse_enchantments(pack)
         acquisition = parse_acquisition(pack, recipes)
 
         output.mkdir(parents=True, exist_ok=True)
@@ -715,6 +808,8 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
             first = next((recipe_map[item] for item in food["recipes"] if item in recipe_map), None)
             food["icon"] = first.get("icon") if first else None
         items = build_items(pack, recipes, foods, acquisition)
+        blessings = parse_blessings(pack, recipes)
+        enchantments = parse_enchantments(pack, recipes, blessings)
         for recipe in recipes:
             recipe.pop("_components", None)
 
@@ -734,6 +829,7 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
             "pack": metadata(pack, pack_path),
             "recipes": recipes,
             "enchantments": enchantments,
+            "blessings": blessings,
             "mechanics": mechanics,
             "overrides": overrides,
             "acquisition": acquisition,

@@ -10,10 +10,12 @@ datapack and resource-pack ZIP.
 - Custom item names, models, lore, and textures
 - Forward and reverse recipe lookup
 - Food properties and consume effects
-- Custom enchantment metadata
+- Custom enchantment behavior, triggers, scaling, equipment, and source commands
+- Blessing contents and crafting relationships
 - Recursive loot-table acquisition sources
 - Villager trades and bundle contents
 - Mechanics and vanilla override summaries
+- Paginated Item Catalogue with component-distinct custom variants
 - Paginated static site with a localhost-only Python server
 
 ## Build

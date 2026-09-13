@@ -45,4 +45,16 @@ if (!elements.get("item-results").innerHTML.includes("catalog-item")) {
 if (!elements.get("food-results").innerHTML.includes("food-card")) {
   throw new Error("Food catalogue did not render");
 }
-console.log("Generated app initialized and rendered catalogue pages");
+if (
+  context.window.MATCHA_DATA.enchantments.length &&
+  !elements.get("enchantment-results").innerHTML.includes("enchant-card")
+) {
+  throw new Error("Enchantment catalogue did not render");
+}
+if (
+  context.window.MATCHA_DATA.blessings.length &&
+  !elements.get("blessing-results").innerHTML.includes("blessing-card")
+) {
+  throw new Error("Blessing catalogue did not render");
+}
+console.log("Generated app initialized and rendered all catalogue pages");

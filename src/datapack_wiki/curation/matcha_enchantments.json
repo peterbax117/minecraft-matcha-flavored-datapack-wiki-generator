@@ -1,0 +1,137 @@
+{
+  "main:anemos": {
+    "summary": "Launches a player-owned wind charge when the weapon strikes a target or block.",
+    "activation": "On attack or block hit while held in the main hand.",
+    "scaling": "Single level. Uses a 10-tick cooldown."
+  },
+  "main:bloodrage": {
+    "summary": "Grants Resistance II and Strength I while the wearer is at 10 health points or less.",
+    "activation": "Checked continuously while the enchanted item is held.",
+    "scaling": "Single level."
+  },
+  "main:cleanse_armor_head": {
+    "summary": "Continuously removes Blindness and Darkness.",
+    "activation": "While the associated armor is equipped.",
+    "scaling": "Single level."
+  },
+  "main:cleanse_armor_chest": {
+    "summary": "Continuously removes Poison and Wither.",
+    "activation": "While the associated armor is equipped.",
+    "scaling": "Single level."
+  },
+  "main:cleanse_armor_legs": {
+    "summary": "Continuously removes Levitation.",
+    "activation": "While the associated armor is equipped.",
+    "scaling": "Single level."
+  },
+  "main:cleanse_armor_feet": {
+    "summary": "Continuously removes Slowness.",
+    "activation": "While the associated armor is equipped.",
+    "scaling": "Single level."
+  },
+  "main:cleanse_armor_maleffect": {
+    "summary": "Continuously removes Poison, Wither, Mining Fatigue, Weakness, Blindness, Darkness, Infested, Weaving, Nausea, Oozing, and Slowness.",
+    "activation": "While the associated armor is equipped.",
+    "scaling": "Single level."
+  },
+  "main:conduit_power": {
+    "summary": "Continuously grants Conduit Power I and Dolphin's Grace I.",
+    "activation": "While worn in the head slot.",
+    "scaling": "Single level."
+  },
+  "main:divinity": {
+    "summary": "Periodically grants Absorption based on the number of equipped Divinity items.",
+    "activation": "Counts enchanted armor and the held main-hand item.",
+    "scaling": "One piece grants Absorption I, two grant II, three grant III, and four grant V with a faster 20-second refresh."
+  },
+  "main:fire_proof": {
+    "summary": "Continuously grants Fire Resistance I.",
+    "activation": "While worn in the head slot.",
+    "scaling": "Single level."
+  },
+  "main:freezing_protection": {
+    "summary": "Reduces freezing damage.",
+    "activation": "When receiving damage tagged as freezing.",
+    "scaling": "Adds 24 protection per level, up to level III."
+  },
+  "main:haste": {
+    "summary": "Continuously grants Haste II.",
+    "activation": "While worn in the head slot.",
+    "scaling": "Single level."
+  },
+  "main:magic_protection": {
+    "summary": "Adds protection against damage tagged as magic.",
+    "activation": "When receiving magic damage while the associated armor is equipped.",
+    "scaling": "Adds 8 protection."
+  },
+  "main:max_magic_protection": {
+    "summary": "Provides the maximum variant of protection against magic damage.",
+    "activation": "When receiving magic damage while the associated armor is equipped.",
+    "scaling": "Adds 20 protection."
+  },
+  "main:reach": {
+    "summary": "Increases block interaction range.",
+    "activation": "While worn in the chest slot.",
+    "scaling": "Adds 2 blocks per level, up to level III."
+  },
+  "main:regeneration": {
+    "summary": "Applies recurring Regeneration I when Regeneration is not already active.",
+    "activation": "Checked continuously while worn in the head slot.",
+    "scaling": "Single level; each application lasts 3 seconds."
+  },
+  "main:riposte": {
+    "summary": "Propels the attacker backward after a successful attack and consumes one durability.",
+    "activation": "After attacking while not riding, fall-flying, or in water.",
+    "scaling": "Impulse strength increases by 0.458 per level, up to level III."
+  },
+  "main:sanguine": {
+    "summary": "Grants Regeneration III for one second after attacking a valid target.",
+    "activation": "After attacking anything except an armor stand.",
+    "scaling": "Single level."
+  },
+  "main:shakudo_regen": {
+    "summary": "Periodically grants Regeneration based on the number of equipped Shakudo pieces.",
+    "activation": "Counts enchanted armor pieces and compatible held equipment.",
+    "scaling": "More pieces shorten the interval; five or more pieces increase the effect to Regeneration II."
+  },
+  "main:slaughter": {
+    "summary": "Deals 40 additional damage to livestock and heavily slows nearby livestock.",
+    "activation": "On damage and continuously while held in the main hand.",
+    "scaling": "Single level."
+  },
+  "main:traversal": {
+    "summary": "Increases movement speed while traveling over paths, gravel, coarse dirt, packed mud, or mud bricks.",
+    "activation": "While moving on supported surfaces and not flying or riding.",
+    "scaling": "Adds 0.0105 movement speed per level, up to level III, with a 4 percent per-level durability-use chance."
+  },
+  "main:warding_armour": {
+    "summary": "Combines equipped warding armor pieces to slow and damage nearby warding targets.",
+    "activation": "Checked continuously while warding armor is equipped.",
+    "scaling": "Range, damage, refresh speed, and anti-copper behavior improve with additional pieces."
+  },
+  "main:warding0": {
+    "summary": "Slows warding targets within 8 blocks and damages nearby non-Wither targets within 3 blocks.",
+    "activation": "While held in either hand.",
+    "scaling": "Single level."
+  },
+  "main:warding1": {
+    "summary": "Slows warding targets within 8 blocks, damages non-Wither targets within 6 blocks, and damages Withers within 8 blocks.",
+    "activation": "While held in either hand.",
+    "scaling": "Single level."
+  },
+  "main:warding2": {
+    "summary": "Slows warding targets within 14 blocks, damages non-Wither targets within 8 blocks, and damages Withers within 12 blocks.",
+    "activation": "While held in either hand.",
+    "scaling": "Single level."
+  },
+  "main:warding3": {
+    "summary": "Slows warding targets within 24 blocks and applies stronger damage at extended ranges, including against Withers.",
+    "activation": "While held in either hand.",
+    "scaling": "Maximum warding tier with special behavior against targets wearing copper armor."
+  },
+  "main:zephyr": {
+    "summary": "Supports a charged wind-assisted launch using Jump Boost, Slow Falling, particles, and a wind burst.",
+    "activation": "Charge by sneaking, then release while airborne.",
+    "scaling": "Single level."
+  }
+}
