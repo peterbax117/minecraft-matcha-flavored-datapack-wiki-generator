@@ -142,6 +142,8 @@ def parse_recipes(pack: Pack) -> list[dict]:
                 pack.component_text(line)
                 for line in components.get("minecraft:lore", [])
             ]
+            if result_name == "Blessing" and lore:
+                result_name = lore[0]
             recipe_type = raw.get("type", "").split(":")[-1]
             if recipe_type == "crafting_shaped":
                 pattern_label = " / ".join(raw.get("pattern", []))
@@ -272,6 +274,129 @@ def parse_food(pack: Pack, recipes: list[dict]) -> list[dict]:
         group["recipes"].append(recipe["id"])
         recipe.update(foodKey=key, food=details)
     return sorted(groups.values(), key=lambda item: item["name"].lower())
+
+
+def build_items(pack: Pack, recipes: list[dict], foods: list[dict], acquisition: list[dict]) -> list[dict]:
+    items = {}
+    food_keys = {food["key"] for food in foods}
+
+    def base_key(item_id):
+        return "base:" + normalize_id(item_id)
+
+    def ensure(key, item_id, name, icon=None, custom=False, components=None):
+        record = items.setdefault(
+            key,
+            {
+                "key": key,
+                "id": normalize_id(item_id),
+                "name": name,
+                "icon": icon,
+                "custom": custom,
+                "lore": [],
+                "properties": [],
+                "outputOf": [],
+                "usedIn": [],
+                "foodKey": None,
+            },
+        )
+        if icon and not record.get("icon"):
+            record["icon"] = icon
+        if components:
+            record["lore"] = [
+                pack.component_text(line)
+                for line in components.get("minecraft:lore", [])
+            ]
+            properties = []
+            if "minecraft:max_damage" in components:
+                properties.append(f"Durability: {components['minecraft:max_damage']}")
+            if "minecraft:enchantments" in components:
+                enchants = components["minecraft:enchantments"]
+                properties.append(
+                    "Enchantments: "
+                    + ", ".join(
+                        f"{key.split(':')[-1].replace('_', ' ').title()} {level}"
+                        for key, level in enchants.items()
+                    )
+                )
+            if "minecraft:repairable" in components:
+                repairable = components["minecraft:repairable"].get("items", [])
+                repairable = [repairable] if isinstance(repairable, str) else repairable
+                properties.append(
+                    "Repairable with: "
+                    + ", ".join(item.split(":")[-1].replace("_", " ").title() for item in repairable)
+                )
+            tool = components.get("minecraft:tool", {})
+            if tool.get("default_mining_speed") is not None:
+                properties.append(f"Default mining speed: {tool['default_mining_speed']}")
+            record["properties"] = properties
+        return record
+
+    for acquisition_item in acquisition:
+        ensure(
+            base_key(acquisition_item["id"]),
+            acquisition_item["id"],
+            acquisition_item["name"],
+        )
+
+    for recipe in recipes:
+        components = recipe.get("_components", {})
+        if recipe.get("foodKey") in food_keys:
+            result_key = recipe["foodKey"]
+        elif recipe["custom"]:
+            identity = {
+                "id": recipe["resultId"],
+                "model": components.get("minecraft:item_model"),
+                "name": components.get("minecraft:item_name"),
+                "components": components,
+            }
+            digest = hashlib.sha256(
+                json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()[:16]
+            result_key = f"variant:{digest}"
+        else:
+            result_key = base_key(recipe["resultId"])
+        result_item = ensure(
+            result_key,
+            recipe["resultId"],
+            recipe["resultName"],
+            recipe.get("icon"),
+            recipe["custom"],
+            components,
+        )
+        result_item["outputOf"].append(recipe["id"])
+        result_item["foodKey"] = recipe.get("foodKey")
+        recipe["resultKey"] = result_key
+
+        for ingredient in recipe["ingredients"]:
+            if ingredient["id"].startswith("#"):
+                continue
+            key = base_key(ingredient["id"])
+            ingredient["itemKey"] = key
+            ensure(
+                key,
+                ingredient["id"],
+                ingredient["name"],
+                ingredient.get("icon"),
+            )["usedIn"].append(recipe["id"])
+
+    for record in items.values():
+        record["outputOf"] = sorted(set(record["outputOf"]))
+        record["usedIn"] = sorted(set(record["usedIn"]))
+        lower = record["name"].lower()
+        if record["foodKey"]:
+            category = "Food and drink"
+        elif "blessing" in lower or record["key"].startswith("variant:") and "enchanted_book" in record["id"]:
+            category = "Blessings"
+        elif any(word in lower for word in ("sword", "axe", "pickaxe", "shovel", "hoe", "helmet", "chestplate", "leggings", "boots", "shield", "bow", "mace", "mattock", "dolabra")):
+            category = "Gear"
+        elif any(word in lower for word in ("ingot", "alloy", "nugget", "scrap", "fragment", "dust", "wire", "leather", "flour", "dough", "wax")):
+            category = "Materials"
+        elif any(word in lower for word in ("block", "bricks", "stairs", "slab", "wall", "fence", "door", "trapdoor", "planks", "glass")):
+            category = "Blocks"
+        else:
+            category = "Other"
+        record["category"] = category
+    return sorted(items.values(), key=lambda item: item["name"].lower())
 
 
 def parse_enchantments(pack: Pack) -> list[dict]:
@@ -553,10 +678,6 @@ class Assets:
                 for ingredient in recipe["ingredients"]:
                     if not ingredient.get("icon") and not ingredient["id"].startswith("#"):
                         ingredient["icon"] = self.save(item_cache.get(ingredient["id"]))
-        for recipe in recipes:
-            recipe.pop("_components", None)
-
-
 def metadata(pack: Pack, pack_path: Path) -> dict:
     raw = pack.read_json(pack.root / "pack.mcmeta")
     description = raw.get("pack", {}).get("description", "Minecraft Datapack")
@@ -593,6 +714,9 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
         for food in foods:
             first = next((recipe_map[item] for item in food["recipes"] if item in recipe_map), None)
             food["icon"] = first.get("icon") if first else None
+        items = build_items(pack, recipes, foods, acquisition)
+        for recipe in recipes:
+            recipe.pop("_components", None)
 
         mechanics_root = pack.data / "main/function/mechanic"
         mechanics = sorted(
@@ -614,6 +738,7 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
             "overrides": overrides,
             "acquisition": acquisition,
             "foodItems": foods,
+            "items": items,
             "foodEffects": sorted(
                 {
                     (effect["id"], effect["name"], effect["category"])
@@ -640,6 +765,7 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
         )
         print(f"Built {output}")
         print(
-            f"{len(recipes)} recipes, {len(acquisition)} items, "
+            f"{len(recipes)} recipes, {len(items)} item entries, "
+            f"{len(acquisition)} acquisition records, "
             f"{len(foods)} food variants, {len(enchantments)} enchantments"
         )

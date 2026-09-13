@@ -65,6 +65,9 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(len(data["recipes"]), 1)
             self.assertEqual(data["recipes"][0]["ingredients"][0]["name"], "Tomatoes")
             self.assertEqual(len(data["foodItems"]), 1)
+            self.assertEqual(len(data["items"]), 3)
+            self.assertEqual(data["recipes"][0]["resultKey"], data["foodItems"][0]["key"])
+            self.assertTrue(any(item["name"] == "Test Soup" and item["foodKey"] for item in data["items"]))
             effect = data["foodItems"][0]["effects"][0]
             self.assertEqual(effect["level"], 2)
             self.assertEqual(effect["duration"], "2s")

@@ -8,6 +8,7 @@
 <div class="layout">
 <nav class="side"><h3>Contents</h3>
 <button data-page="overview" class="active">Overview</button>
+<button data-page="items">Items</button>
 <button data-page="recipes">Recipes</button>
 <button data-page="reverse">Reverse recipe lookup</button>
 <button data-page="obtaining">Obtaining items</button>
@@ -27,6 +28,14 @@
 <h2>Using this wiki</h2><p>Use <b>Recipes</b> for output and ingredient search. Use <b>Reverse recipe lookup</b> to find what creates or consumes an item.</p>
 <h2>Image sources</h2><p>Recipe diagrams prefer textures from the bundled resource pack. Missing vanilla inventory icons may come from <a href="https://minecraft.wiki/">Minecraft Wiki</a>. Minecraft game assets are owned by Mojang Studios and Microsoft.</p>
 <h2>Content summary</h2><div id="summary"></div></section>
+
+<section class="page" id="items"><h1>Item Catalogue</h1>
+<p class="sub">Browse base items and distinct custom variants without merging items that share a vanilla carrier.</p>
+<div class="searchbox"><label for="item-search">Filter items</label><div class="searchrow">
+<input id="item-search" placeholder="Name, item ID, lore, or property">
+<select id="item-category"><option value="">All categories</option></select>
+<button id="clear-items">Clear</button></div></div>
+<div class="stats" id="item-stats"></div><div id="item-results" class="item-grid"></div><div id="item-pager" class="pager"></div></section>
 
 <section class="page" id="recipes"><h1>Recipes</h1>
 <div class="searchbox"><label for="all-search">Search every recipe</label><div class="searchrow"><input id="all-search" placeholder="Benzene, electric wire, minecraft:redstone..."><select id="category"><option value="">All categories</option></select><button id="clear-all">Clear</button></div>
