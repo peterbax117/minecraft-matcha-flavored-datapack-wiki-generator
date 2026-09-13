@@ -16,6 +16,8 @@
 <button data-page="food">Food and effects</button>
 <button data-page="enchantments">Enchantments</button>
 <button data-page="blessings">Blessings</button>
+<button data-page="progression">Progression</button>
+<button data-page="differences">Differences from Vanilla</button>
 <button data-page="mechanics">Mechanics</button>
 <button data-page="overrides">Vanilla overrides</button>
 </nav>
@@ -78,6 +80,18 @@
 <p class="sub">Craftable prayer and elegy books containing related enchantments.</p>
 <div class="searchbox"><label for="blessing-search">Filter Blessings</label><div class="searchrow"><input id="blessing-search" placeholder="Prayer of Yamm, Aqua Affinity..."><button id="clear-blessings">Clear</button></div></div>
 <div class="stats" id="blessing-stats"></div><div id="blessing-results"></div></section>
+
+<section class="page" id="progression"><h1>Progression</h1>
+<p class="sub">A source-backed route through the pack, followed by its visible advancement catalogue.</p>
+<div id="progression-path"></div>
+<h2>Advancements</h2><div class="searchbox"><label for="advancement-search">Filter advancements</label><div class="searchrow"><input id="advancement-search" placeholder="Copper, Nether, Blessing..."><select id="advancement-section"><option value="">All sections</option></select><button id="clear-advancements">Clear</button></div></div>
+<div class="stats" id="advancement-stats"></div><div id="advancement-results"></div></section>
+
+<section class="page" id="differences"><h1>Differences from Vanilla</h1>
+<p class="sub">Verified changes implemented by the datapack, with source files and provenance.</p>
+<div class="searchbox"><label for="difference-search">Filter changes</label><div class="searchrow"><input id="difference-search" placeholder="Health, sleep, mobs, enchantments..."><select id="difference-category"><option value="">All categories</option></select><button id="clear-differences">Clear</button></div></div>
+<div class="stats" id="difference-stats"></div><div id="difference-results"></div></section>
+
 <section class="page" id="mechanics"><h1>Gameplay mechanics</h1><div id="mechanic-list"></div></section>
 <section class="page" id="overrides"><h1>Vanilla data overrides</h1><div id="override-table"></div></section>
 </main></div>

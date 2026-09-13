@@ -1,0 +1,125 @@
+{
+  "progression": [
+    {
+      "title": "Establish food and fire",
+      "summary": "Gather grass with a hoe, make Kindling, light a campfire, and cook food to reveal ingredient effects.",
+      "advancements": ["main:tutorial/light_campfire", "main:tutorial/obtain_dry_grass", "main:tutorial/cook_food"]
+    },
+    {
+      "title": "Build the Mud Kiln",
+      "summary": "Use dried grass and earthen materials to construct the first processing station.",
+      "advancements": ["main:tutorial/obtain_kiln", "main:tutorial/obtain_copper", "main:tutorial/obtain_smooth_stone"]
+    },
+    {
+      "title": "Advance through metals",
+      "summary": "Build a Blast Furnace, obtain iron and gold, then create Carbon-Rich Iron and Steel.",
+      "advancements": ["main:tutorial/obtain_blast_furnace", "main:tutorial/obtain_iron_ingot", "main:tutorial/obtain_gold", "main:tutorial/obtain_carbon_rich_iron", "main:tutorial/obtain_steel"]
+    },
+    {
+      "title": "Unlock smithing and alloys",
+      "summary": "Use the Smithing Table for equipment upgrades and progress through Hepatizon, Shakudo, Electrum, and Adamant.",
+      "advancements": ["main:tutorial/obtain_smithing_table", "main:tutorial/obtain_bronze", "main:tutorial/obtain_shakudo", "main:tutorial/obtain_electrum", "main:tutorial/obtain_adamant"]
+    },
+    {
+      "title": "Build a community",
+      "summary": "Acquire Obols, recruit an asylum seeker, trade fish, and work with the redesigned professions.",
+      "advancements": ["main:tutorial/obtain_obol", "main:tutorial/trade_for_asylum_seeker", "main:tutorial/trade_fish", "main:tutorial/trade_everything"]
+    },
+    {
+      "title": "Enter the Nether",
+      "summary": "Synthesize Benzene, stabilize Estus, craft a Hell-Bound Book, and begin crafting Blessings.",
+      "advancements": ["main:tutorial/enter_nether", "main:hell/obtain_benzene", "main:hell/obtain_stabilised_estus", "main:hell/craft_hell_bound_book", "main:hell/craft_blessing"]
+    },
+    {
+      "title": "Complete the End path",
+      "summary": "Locate the stronghold, defeat the Ender Dragon, obtain Elytra, and apply the late-game wing upgrades.",
+      "advancements": ["main:tutorial/find_stronghold", "main:end/kill_dragon", "main:end/elytra", "main:end/smith_bronze_elytra", "main:end/smith_shakudo_elytra"]
+    }
+  ],
+  "differences": [
+    {
+      "category": "Survival",
+      "title": "Natural health regeneration is disabled",
+      "summary": "Food and other custom recovery systems replace vanilla natural regeneration.",
+      "provenance": "extracted",
+      "sources": ["data/main/function/setup/gamerules.mcfunction", "data/food/recipe/"]
+    },
+    {
+      "category": "Survival",
+      "title": "Inventory is kept after death",
+      "summary": "The keep_inventory gamerule is enabled, while the custom heart system removes two maximum-health points after each recorded death.",
+      "provenance": "extracted",
+      "sources": ["data/main/function/setup/gamerules.mcfunction", "data/main/function/mechanic/heart_container/hpdown.mcfunction"]
+    },
+    {
+      "category": "Survival",
+      "title": "Maximum health can change",
+      "summary": "Crystal Hearts add two health points up to 60. Death removes two points, with the configured lower bound set to 20.",
+      "provenance": "extracted",
+      "sources": ["data/main/function/mechanic/heart_container/clear_heart_container.mcfunction", "data/main/function/mechanic/heart_container/set_max_hp.mcfunction", "data/main/function/setup/scoreboard.mcfunction"]
+    },
+    {
+      "category": "Time and sleep",
+      "title": "Vanilla time advancement is disabled",
+      "summary": "The pack advances time through a scheduled function at approximately one game tick per three server ticks.",
+      "provenance": "derived",
+      "sources": ["data/main/function/setup/gamerules.mcfunction", "data/main/function/environmental/day_cycle_extender.mcfunction"]
+    },
+    {
+      "category": "Time and sleep",
+      "title": "Sleeping advances time gradually",
+      "summary": "While a player sleeps, the pack repeatedly adds 120 ticks and clears the weather rather than using normal night skipping.",
+      "provenance": "extracted",
+      "sources": ["data/main/function/mechanic/sleep.mcfunction"]
+    },
+    {
+      "category": "Mobs",
+      "title": "Phantom spawning is disabled",
+      "summary": "The spawn_phantoms gamerule is set to false.",
+      "provenance": "extracted",
+      "sources": ["data/main/function/setup/gamerules.mcfunction"]
+    },
+    {
+      "category": "Mobs",
+      "title": "Hostile mobs scale differently by difficulty",
+      "summary": "Skeleton, creeper, cave-spider, zombie, husk, silverfish, and spider attributes or equipment are modified by difficulty.",
+      "provenance": "extracted",
+      "sources": ["data/main/function/mechanic/spawn_mechanic/easy_modifications.mcfunction", "data/main/function/mechanic/spawn_mechanic/normal_modifications.mcfunction", "data/main/function/mechanic/spawn_mechanic/hard_modifications.mcfunction"]
+    },
+    {
+      "category": "Equipment",
+      "title": "Equipment can be repaired indefinitely",
+      "summary": "The pack resets the repair-cost component on inventory and hotbar items.",
+      "provenance": "extracted",
+      "sources": ["data/endless_repairs/function/reset_breakable_repair_cost.mcfunction"]
+    },
+    {
+      "category": "Equipment",
+      "title": "Equipment progression uses custom alloys",
+      "summary": "Advancements guide players through copper, iron, Carbon-Rich Iron, Steel, Hepatizon, Shakudo, Electrum, and Adamant equipment.",
+      "provenance": "derived",
+      "sources": ["data/main/advancement/tutorial/", "data/smithing_table/recipe/"]
+    },
+    {
+      "category": "Enchanting",
+      "title": "Blessings group related enchantments",
+      "summary": "Craftable prayer and elegy books contain predefined combinations of enchantments.",
+      "provenance": "extracted",
+      "sources": ["data/blessings/recipe/", "data/main/advancement/hell/craft_blessing.json"]
+    },
+    {
+      "category": "World",
+      "title": "Explosion drops do not decay",
+      "summary": "Block and mob explosions retain all eligible drops.",
+      "provenance": "extracted",
+      "sources": ["data/main/function/setup/gamerules.mcfunction"]
+    },
+    {
+      "category": "World",
+      "title": "Overworld and Nether dimension settings are replaced",
+      "summary": "The pack supplies custom dimension-type definitions, including altered darkness behavior.",
+      "provenance": "extracted",
+      "sources": ["data/minecraft/dimension_type/overworld.json", "data/minecraft/dimension_type/the_nether.json"]
+    }
+  ]
+}

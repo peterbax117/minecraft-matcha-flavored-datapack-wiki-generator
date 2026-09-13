@@ -659,6 +659,52 @@ def parse_acquisition(pack: Pack, recipes: list[dict]) -> list[dict]:
     return result
 
 
+def parse_advancements(pack: Pack) -> list[dict]:
+    root = pack.data / "main/advancement"
+    result = []
+    if not root.exists():
+        return result
+    excluded_sections = {"recipe_unlocks", "particle", "multiplayer_support", "cooking_recipes"}
+    for path in sorted(root.rglob("*.json")):
+        relative = path.relative_to(root)
+        section = relative.parts[0] if len(relative.parts) > 1 else "other"
+        if section in excluded_sections:
+            continue
+        raw = pack.read_json(path)
+        display = raw.get("display")
+        if not isinstance(display, dict):
+            continue
+        advancement_id = "main:" + relative.with_suffix("").as_posix()
+        icon = display.get("icon", {})
+        result.append(
+            {
+                "id": advancement_id,
+                "section": section,
+                "title": pack.component_text(display.get("title")) or relative.stem.replace("_", " ").title(),
+                "description": pack.component_text(display.get("description")),
+                "frame": display.get("frame", "task"),
+                "hidden": display.get("hidden", False),
+                "parent": raw.get("parent"),
+                "iconId": normalize_id(icon.get("id")) if isinstance(icon, dict) and icon.get("id") else None,
+                "source": f"data/main/advancement/{relative.as_posix()}",
+            }
+        )
+    known_ids = {item["id"] for item in result}
+    for item in result:
+        item["children"] = sorted(
+            candidate["id"] for candidate in result if candidate.get("parent") == item["id"]
+        )
+        item["parentVisible"] = item.get("parent") in known_ids
+    return result
+
+
+def parse_guides() -> dict:
+    path = PACKAGE_ROOT / "curation/matcha_guides.json"
+    if not path.exists():
+        return {"progression": [], "differences": []}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 class Assets:
     def __init__(self, pack: Pack, output: Path, reuse_site: Path | None, fetch_wiki: bool):
         self.pack = pack
@@ -810,6 +856,8 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
         items = build_items(pack, recipes, foods, acquisition)
         blessings = parse_blessings(pack, recipes)
         enchantments = parse_enchantments(pack, recipes, blessings)
+        advancements = parse_advancements(pack)
+        guides = parse_guides()
         for recipe in recipes:
             recipe.pop("_components", None)
 
@@ -830,6 +878,9 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
             "recipes": recipes,
             "enchantments": enchantments,
             "blessings": blessings,
+            "advancements": advancements,
+            "progression": guides["progression"],
+            "differences": guides["differences"],
             "mechanics": mechanics,
             "overrides": overrides,
             "acquisition": acquisition,

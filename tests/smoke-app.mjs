@@ -57,6 +57,18 @@ if (
 ) {
   throw new Error("Blessing catalogue did not render");
 }
+if (
+  context.window.MATCHA_DATA.advancements.length &&
+  !elements.get("advancement-results").innerHTML.includes("advancement-card")
+) {
+  throw new Error("Progression advancement catalogue did not render");
+}
+if (
+  context.window.MATCHA_DATA.differences.length &&
+  !elements.get("difference-results").innerHTML.includes("difference-card")
+) {
+  throw new Error("Differences from Vanilla did not render");
+}
 elements.get("global-search").value = "Aqua Affinity";
 elements.get("global-search").oninput();
 await new Promise((resolve) => setTimeout(resolve, 200));
