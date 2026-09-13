@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minecraft-datapack-wiki"
+version = "0.1.0"
+description = "Generate a searchable local wiki from a Minecraft datapack and resource pack."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Pete Baxter"}]
+
+[project.scripts]
+datapack-wiki = "datapack_wiki.cli:main"
+
+[tool.setuptools.package-data]
+datapack_wiki = ["templates/*"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
