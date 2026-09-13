@@ -57,4 +57,19 @@ if (
 ) {
   throw new Error("Blessing catalogue did not render");
 }
+elements.get("global-search").value = "Aqua Affinity";
+elements.get("global-search").oninput();
+await new Promise((resolve) => setTimeout(resolve, 200));
+if (
+  !elements.get("global-results").innerHTML.includes("Recipes") ||
+  !elements.get("global-results").innerHTML.includes("Blessings")
+) {
+  throw new Error("Unified search did not return cross-category results");
+}
+elements.get("all-search").value = "Tomatoes";
+elements.get("all-search").oninput();
+await new Promise((resolve) => setTimeout(resolve, 200));
+if (!elements.get("all-results").innerHTML.includes("Matching items")) {
+  throw new Error("Recipe search did not render matching item identities");
+}
 console.log("Generated app initialized and rendered all catalogue pages");

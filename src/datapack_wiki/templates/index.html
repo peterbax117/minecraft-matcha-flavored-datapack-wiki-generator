@@ -8,6 +8,7 @@
 <div class="layout">
 <nav class="side"><h3>Contents</h3>
 <button data-page="overview" class="active">Overview</button>
+<button data-page="search">Search everything</button>
 <button data-page="items">Items</button>
 <button data-page="recipes">Recipes</button>
 <button data-page="reverse">Reverse recipe lookup</button>
@@ -29,6 +30,12 @@
 <h2>Using this wiki</h2><p>Use <b>Recipes</b> for output and ingredient search. Use <b>Reverse recipe lookup</b> to find what creates or consumes an item.</p>
 <h2>Image sources</h2><p>Recipe diagrams prefer textures from the bundled resource pack. Missing vanilla inventory icons may come from <a href="https://minecraft.wiki/">Minecraft Wiki</a>. Minecraft game assets are owned by Mojang Studios and Microsoft.</p>
 <h2>Content summary</h2><div id="summary"></div></section>
+
+<section class="page" id="search"><h1>Search everything</h1>
+<p class="sub">Search every generated content type from one place.</p>
+<div class="searchbox"><label for="global-search">Search the wiki</label><div class="searchrow"><input id="global-search" placeholder="Tomatoes, Aqua Affinity, Farmer, Trail Ruins..."><button id="clear-global">Clear</button></div>
+<div class="hint">Searches item names and IDs, recipes, food effects, enchantments, Blessings, acquisition locations, trades, and mechanics.</div></div>
+<div class="stats" id="global-stats"></div><div id="global-results"><div class="empty">Enter a search term.</div></div></section>
 
 <section class="page" id="items"><h1>Item Catalogue</h1>
 <p class="sub">Browse base items and distinct custom variants without merging items that share a vanilla carrier.</p>
