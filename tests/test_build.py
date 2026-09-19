@@ -88,7 +88,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(result["allAround"]["armor"], [])
 
     def test_build_optimum_builds_resolves_matching_curated_ids(self):
-        enchantments = [{"id": "main:conduit_power", "name": "Conduit Power"}]
+        enchantments = [{"id": "main:conduit_power", "name": "Conduit Power", "slots": ["head"]}]
         blessings = [
             {
                 "id": "blessings:depth_strider_riptide_aqua_affinity_respiration",
@@ -114,16 +114,21 @@ class BuildTests(unittest.TestCase):
         result = build_optimum_builds(enchantments, blessings, foods, items)
         exploring = next(persona for persona in result["personas"] if persona["id"] == "exploring")
         self.assertIn(
-            {"id": "main:conduit_power", "name": "Conduit Power", "reason": exploring["enchantments"][0]["reason"]},
+            {
+                "id": "main:conduit_power",
+                "name": "Conduit Power",
+                "reason": exploring["enchantments"][0]["reason"],
+                "slots": ["head"],
+            },
             exploring["enchantments"],
         )
+        blessing_pick = exploring["blessings"][0]
+        self.assertEqual(blessing_pick["id"], "blessings:depth_strider_riptide_aqua_affinity_respiration")
+        self.assertEqual(blessing_pick["name"], "Prayer of Yamm")
+        self.assertTrue(blessing_pick["targets"])
         self.assertIn(
-            {
-                "id": "blessings:depth_strider_riptide_aqua_affinity_respiration",
-                "name": "Prayer of Yamm",
-                "reason": exploring["blessings"][0]["reason"],
-            },
-            exploring["blessings"],
+            {"item": "Boots", "enchantments": ["Depth Strider 2"]},
+            blessing_pick["targets"],
         )
         self.assertIn(
             {"key": "food:abc123", "name": "Golden Carrot Cupcake", "reason": exploring["consumables"][0]["reason"]},

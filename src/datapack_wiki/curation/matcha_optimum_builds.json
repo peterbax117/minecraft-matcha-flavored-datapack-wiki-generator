@@ -85,19 +85,34 @@
       "blessings": [
         {
           "id": "blessings:depth_strider_riptide_aqua_affinity_respiration",
-          "reason": "Depth Strider, Riptide, Aqua Affinity, and Respiration together cover underwater movement, mining, breathing, and trident travel in one book."
+          "reason": "Depth Strider, Riptide, Aqua Affinity, and Respiration together cover underwater movement, mining, breathing, and trident travel in one book.",
+          "targets": [
+            {"item": "Boots", "enchantments": ["Depth Strider 2"]},
+            {"item": "Trident", "enchantments": ["Riptide 1"]},
+            {"item": "Helmet", "enchantments": ["Aqua Affinity 1", "Respiration 2"]}
+          ]
         },
         {
           "id": "blessings:swift_sneak_soul_speed",
-          "reason": "Soul Speed for fast travel across soul sand and soil, plus Swift Sneak for quiet, faster crouched movement."
+          "reason": "Soul Speed for fast travel across soul sand and soil, plus Swift Sneak for quiet, faster crouched movement.",
+          "targets": [
+            {"item": "Boots", "enchantments": ["Swift Sneak 2", "Soul Speed 2"]}
+          ]
         },
         {
           "id": "blessings:frost_walker_frost_protection",
-          "reason": "Frost Walker turns open water into crossable ice on the move, and Freezing Protection removes cold-biome damage risk."
+          "reason": "Frost Walker turns open water into crossable ice on the move, and Freezing Protection removes cold-biome damage risk.",
+          "targets": [
+            {"item": "Boots", "enchantments": ["Frost Walker 2"]},
+            {"item": "Any armor piece", "enchantments": ["Freezing Protection 2"]}
+          ]
         },
         {
           "id": "blessings:feather_falling",
-          "reason": "Feather Falling removes fall damage risk while exploring cliffs, caves, and unfamiliar vertical terrain."
+          "reason": "Feather Falling removes fall damage risk while exploring cliffs, caves, and unfamiliar vertical terrain.",
+          "targets": [
+            {"item": "Boots", "enchantments": ["Feather Falling 2"]}
+          ]
         }
       ],
       "consumables": [
@@ -142,19 +157,31 @@
       "blessings": [
         {
           "id": "blessings:efficiency_unbreaking",
-          "reason": "Efficiency 3 and Unbreaking 3 together are the core mining-speed and tool-longevity combination."
+          "reason": "Efficiency 3 and Unbreaking 3 together are the core mining-speed and tool-longevity combination.",
+          "targets": [
+            {"item": "Pickaxe (or main mining tool)", "enchantments": ["Efficiency 3", "Unbreaking 3"]}
+          ]
         },
         {
           "id": "blessings:silk_touch",
-          "reason": "Collect ores, terrain features, and decorative blocks intact for building projects."
+          "reason": "Collect ores, terrain features, and decorative blocks intact for building projects.",
+          "targets": [
+            {"item": "Pickaxe, Shovel, or Axe", "enchantments": ["Silk Touch 1"]}
+          ]
         },
         {
           "id": "blessings:reach",
-          "reason": "An additional Reach source when the enchantment slot on the pickaxe or axe is preferred over armor."
+          "reason": "Reach only supports the chestplate slot in this pack, so it is an armor pick rather than a tool enchantment.",
+          "targets": [
+            {"item": "Chestplate", "enchantments": ["Reach 1"]}
+          ]
         },
         {
           "id": "blessings:mending",
-          "reason": "Keeps mining and building tools repaired automatically from experience gained while digging."
+          "reason": "Keeps mining and building tools repaired automatically from experience gained while digging.",
+          "targets": [
+            {"item": "Any tool, weapon, or armor piece", "enchantments": ["Mending 1"]}
+          ]
         }
       ],
       "consumables": [
@@ -203,23 +230,42 @@
       "blessings": [
         {
           "id": "blessings:lunge_breach",
-          "reason": "Lunge and Breach are the top mace-offense combination for closing distance and ignoring armor."
+          "reason": "Lunge and Breach are the top mace-offense combination for closing distance and ignoring armor.",
+          "targets": [
+            {"item": "Mace", "enchantments": ["Lunge 2", "Breach 2"]}
+          ]
         },
         {
           "id": "blessings:piercing_impaling",
-          "reason": "Impaling and Piercing cover top trident and crossbow offense, including strong aquatic combat damage."
+          "reason": "Impaling and Piercing are each other's ranged/aquatic counterpart, but apply to two different weapons in this pack.",
+          "targets": [
+            {"item": "Trident", "enchantments": ["Impaling 3"]},
+            {"item": "Crossbow", "enchantments": ["Piercing 2"]}
+          ]
         },
         {
           "id": "blessings:power_multishot",
-          "reason": "Power and Multishot are the top bow-offense combination for ranged encounters."
+          "reason": "Power and Multishot are the top ranged-offense combination, but split across two different weapons.",
+          "targets": [
+            {"item": "Bow", "enchantments": ["Power 2"]},
+            {"item": "Crossbow", "enchantments": ["Multishot 1"]}
+          ]
         },
         {
           "id": "blessings:flame_fire_aspect_fire_protection",
-          "reason": "Fire Aspect and Flame add sustained burn damage, and Fire Protection 3 covers the counter-risk."
+          "reason": "Fire Aspect and Flame add sustained burn damage, and Fire Protection 3 covers the counter-risk, split across three item types.",
+          "targets": [
+            {"item": "Bow", "enchantments": ["Flame 1"]},
+            {"item": "Sword or Axe", "enchantments": ["Fire Aspect 1"]},
+            {"item": "Any armor piece", "enchantments": ["Fire Protection 3"]}
+          ]
         },
         {
           "id": "blessings:infinity",
-          "reason": "Removes arrow consumption for sustained ranged engagements."
+          "reason": "Removes arrow consumption for sustained ranged engagements.",
+          "targets": [
+            {"item": "Bow", "enchantments": ["Infinity 1"]}
+          ]
         }
       ],
       "consumables": [
@@ -268,15 +314,24 @@
     "blessings": [
       {
         "id": "blessings:efficiency_unbreaking",
-        "reason": "Unbreaking 3 is the strongest durability source in the pack, bundled with Efficiency 3."
+        "reason": "Unbreaking 3 is the strongest durability source in the pack, bundled with Efficiency 3.",
+        "targets": [
+          {"item": "Pickaxe (or main mining tool)", "enchantments": ["Efficiency 3", "Unbreaking 3"]}
+        ]
       },
       {
         "id": "blessings:unbreaking",
-        "reason": "An earlier or additional Unbreaking 2 source if Efficiency is not needed on that item."
+        "reason": "An earlier or additional Unbreaking 2 source if Efficiency is not needed on that item.",
+        "targets": [
+          {"item": "Any tool, weapon, or armor piece", "enchantments": ["Unbreaking 2"]}
+        ]
       },
       {
         "id": "blessings:mending",
-        "reason": "Passive repair from experience keeps any tool, weapon, or armor piece usable indefinitely."
+        "reason": "Passive repair from experience keeps any tool, weapon, or armor piece usable indefinitely.",
+        "targets": [
+          {"item": "Any tool, weapon, or armor piece", "enchantments": ["Mending 1"]}
+        ]
       }
     ],
     "armor": [

@@ -1342,7 +1342,14 @@ def build_optimum_builds(enchantments, blessings, foods, items):
             enchantment = enchantment_by_id.get(entry["id"])
             if not enchantment:
                 continue
-            resolved.append({"id": entry["id"], "name": enchantment["name"], "reason": entry["reason"]})
+            resolved.append(
+                {
+                    "id": entry["id"],
+                    "name": enchantment["name"],
+                    "reason": entry["reason"],
+                    "slots": enchantment.get("slots", []),
+                }
+            )
         return resolved
 
     def resolve_blessings(entries):
@@ -1351,7 +1358,14 @@ def build_optimum_builds(enchantments, blessings, foods, items):
             blessing = blessing_by_id.get(entry["id"])
             if not blessing:
                 continue
-            resolved.append({"id": entry["id"], "name": blessing["name"], "reason": entry["reason"]})
+            resolved.append(
+                {
+                    "id": entry["id"],
+                    "name": blessing["name"],
+                    "reason": entry["reason"],
+                    "targets": entry.get("targets", []),
+                }
+            )
         return resolved
 
     def resolve_consumables(entries):
