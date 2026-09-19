@@ -196,6 +196,40 @@ if (
   throw new Error("Blessing catalogue did not render");
 }
 if (
+  context.window.MATCHA_DATA.optimumBuilds &&
+  context.window.MATCHA_DATA.optimumBuilds.personas.length &&
+  !elements.get("optimum-builds-results").innerHTML.includes("optimum-persona")
+) {
+  throw new Error("Optimum builds catalogue did not render");
+}
+if (
+  context.window.MATCHA_DATA.optimumBuilds &&
+  context.window.MATCHA_DATA.optimumBuilds.personas.some((persona) => persona.blessings.length)
+) {
+  elements.get("spoiler-mode").value = "minimal";
+  elements.get("spoiler-mode").onchange();
+  if (
+    context.window.MATCHA_DATA.optimumBuilds.personas.some((persona) =>
+      persona.blessings.some((blessing) =>
+        elements.get("optimum-builds-results").innerHTML.includes(blessing.name)
+      )
+    )
+  ) {
+    throw new Error("Minimal spoiler mode exposed an Optimum builds Blessing pick");
+  }
+  elements.get("spoiler-mode").value = "complete";
+  elements.get("spoiler-mode").onchange();
+  if (
+    !context.window.MATCHA_DATA.optimumBuilds.personas.some((persona) =>
+      persona.blessings.some((blessing) =>
+        elements.get("optimum-builds-results").innerHTML.includes(blessing.name)
+      )
+    )
+  ) {
+    throw new Error("Complete spoiler mode did not restore Optimum builds Blessing picks");
+  }
+}
+if (
   context.window.MATCHA_DATA.advancements.length &&
   !elements.get("advancement-results").innerHTML.includes("advancement-card")
 ) {

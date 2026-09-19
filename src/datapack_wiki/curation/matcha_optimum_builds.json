@@ -1,0 +1,193 @@
+{
+  "personas": [
+    {
+      "id": "exploring",
+      "title": "Exploring",
+      "summary": "Covering ground, crossing water and lava, and scouting safely. Prioritizes mobility, underwater capability, and situational vision over raw combat power.",
+      "enchantments": [
+        {
+          "id": "main:conduit_power",
+          "reason": "Continuously grants Conduit Power I and Dolphin's Grace I while worn in the head slot, turning underwater travel from a hazard into a fast lane."
+        },
+        {
+          "id": "main:zephyr",
+          "reason": "A charged wind-assisted launch (Jump Boost, Slow Falling, wind burst) for covering vertical or open terrain quickly."
+        },
+        {
+          "id": "main:fire_proof",
+          "reason": "Continuous Fire Resistance I while worn on the head, removing lava and Nether-crossing risk without a potion timer."
+        }
+      ],
+      "blessings": [
+        {
+          "id": "blessings:depth_strider_riptide_aqua_affinity_respiration",
+          "reason": "Depth Strider, Riptide, Aqua Affinity, and Respiration together cover underwater movement, mining, breathing, and trident travel in one book."
+        },
+        {
+          "id": "blessings:swift_sneak_soul_speed",
+          "reason": "Soul Speed for fast travel across soul sand and soil, plus Swift Sneak for quiet, faster crouched movement."
+        },
+        {
+          "id": "blessings:frost_walker_frost_protection",
+          "reason": "Frost Walker turns open water into crossable ice on the move, and Freezing Protection removes cold-biome damage risk."
+        },
+        {
+          "id": "blessings:feather_falling",
+          "reason": "Feather Falling removes fall damage risk while exploring cliffs, caves, and unfamiliar vertical terrain."
+        }
+      ],
+      "consumables": [
+        {
+          "recipe": "food:golden_carrot_cupcake",
+          "reason": "Longest available Night Vision duration (20 minutes) for cave and night exploration."
+        },
+        {
+          "recipe": "food:green_curry",
+          "reason": "Longest available Speed duration (30 minutes) for covering ground fast."
+        },
+        {
+          "recipe": "food:gimmari",
+          "reason": "Longest available Water Breathing duration (8 minutes) for extended underwater routes."
+        },
+        {
+          "recipe": "food:melon_sorbet",
+          "reason": "Longest available Fire Resistance duration (10 minutes) as backup Nether or lava-crossing insurance."
+        }
+      ]
+    },
+    {
+      "id": "building_mining",
+      "title": "Building / Mining",
+      "summary": "Digging, terraforming, and placing at scale. Prioritizes mining speed, ore yield, reach, and gear longevity over combat.",
+      "enchantments": [
+        {
+          "id": "main:haste",
+          "reason": "Continuous Haste II while worn on the head, stacking with Efficiency for near-instant block breaking without a beacon."
+        },
+        {
+          "id": "main:reach",
+          "reason": "Extends block interaction range while worn in the chest slot, reducing repositioning while building or excavating."
+        }
+      ],
+      "blessings": [
+        {
+          "id": "blessings:efficiency_unbreaking",
+          "reason": "Efficiency 3 and Unbreaking 3 together are the core mining-speed and tool-longevity combination."
+        },
+        {
+          "id": "blessings:silk_touch",
+          "reason": "Collect ores, terrain features, and decorative blocks intact for building projects."
+        },
+        {
+          "id": "blessings:reach",
+          "reason": "An additional Reach source when the enchantment slot on the pickaxe or axe is preferred over armor."
+        },
+        {
+          "id": "blessings:mending",
+          "reason": "Keeps mining and building tools repaired automatically from experience gained while digging."
+        }
+      ],
+      "consumables": [
+        {
+          "recipe": "food:ramen",
+          "reason": "Longest available Haste duration (30 minutes, Tonkotsu Ramen) for sustained mining sessions."
+        },
+        {
+          "recipe": "food:golden_carrot_cupcake",
+          "reason": "Longest available Night Vision duration (20 minutes) for cave mining without placing torches everywhere."
+        }
+      ]
+    },
+    {
+      "id": "adventuring",
+      "title": "Adventuring",
+      "summary": "Combat-focused loadouts for raids, bosses, and hostile mob encounters. Prioritizes maximum offense, maximum defense, and sustain.",
+      "enchantments": [
+        {
+          "id": "main:max_magic_protection",
+          "reason": "The strongest available reduction against magic damage sources for sustained fights."
+        },
+        {
+          "id": "main:divinity",
+          "reason": "Stacks Absorption based on the number of equipped Divinity pieces, up to Absorption V with four pieces equipped."
+        },
+        {
+          "id": "main:warding_armour",
+          "reason": "Combines equipped warding pieces into an area slow-and-damage effect against warding targets."
+        },
+        {
+          "id": "main:sanguine",
+          "reason": "Grants Regeneration III for a second after every successful attack, turning aggression into sustain."
+        },
+        {
+          "id": "main:bloodrage",
+          "reason": "Resistance II and Strength I automatically kick in below 10 health, covering low-health emergencies."
+        }
+      ],
+      "blessings": [
+        {
+          "id": "blessings:lunge_breach",
+          "reason": "Lunge and Breach are the top mace-offense combination for closing distance and ignoring armor."
+        },
+        {
+          "id": "blessings:piercing_impaling",
+          "reason": "Impaling and Piercing cover top trident and crossbow offense, including strong aquatic combat damage."
+        },
+        {
+          "id": "blessings:power_multishot",
+          "reason": "Power and Multishot are the top bow-offense combination for ranged encounters."
+        },
+        {
+          "id": "blessings:flame_fire_aspect_fire_protection",
+          "reason": "Fire Aspect and Flame add sustained burn damage, and Fire Protection 3 covers the counter-risk."
+        },
+        {
+          "id": "blessings:infinity",
+          "reason": "Removes arrow consumption for sustained ranged engagements."
+        }
+      ],
+      "consumables": [
+        {
+          "recipe": "food:sweet_berry_toast",
+          "reason": "Longest available Health Boost duration (8 minutes) for extra effective health before a fight."
+        },
+        {
+          "recipe": "food:kontomire_stew",
+          "reason": "Longest available Strength duration (5 minutes) for maximum melee damage output."
+        },
+        {
+          "recipe": "food:baked_golden_apple",
+          "reason": "Absorption plus layered Regeneration for immediate sustain mid-fight."
+        }
+      ]
+    }
+  ],
+  "allAround": {
+    "title": "All-around picks",
+    "summary": "Enchantments and Blessings worth adding to almost any loadout, regardless of persona.",
+    "enchantments": [
+      {
+        "id": "main:cleanse_armor_maleffect",
+        "reason": "Continuously removes Poison, Wither, Mining Fatigue, Weakness, Blindness, Darkness, Infested, Weaving, Nausea, Oozing, and Slowness in one enchantment."
+      },
+      {
+        "id": "main:regeneration",
+        "reason": "Continuous passive Regeneration I while worn on the head, useful in every playstyle."
+      }
+    ],
+    "blessings": [
+      {
+        "id": "blessings:efficiency_unbreaking",
+        "reason": "Unbreaking 3 is the strongest durability source in the pack, bundled with Efficiency 3."
+      },
+      {
+        "id": "blessings:unbreaking",
+        "reason": "An earlier or additional Unbreaking 2 source if Efficiency is not needed on that item."
+      },
+      {
+        "id": "blessings:mending",
+        "reason": "Passive repair from experience keeps any tool, weapon, or armor piece usable indefinitely."
+      }
+    ]
+  }
+}

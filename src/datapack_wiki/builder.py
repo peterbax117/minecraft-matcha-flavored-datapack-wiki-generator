@@ -1321,6 +1321,69 @@ def build_spoilers(recipes, items, blessings, advancements, progression, places,
     }
 
 
+def build_optimum_builds(enchantments, blessings, foods):
+    path = PACKAGE_ROOT / "curation/matcha_optimum_builds.json"
+    if not path.exists():
+        return {"personas": [], "allAround": None}
+    curation = json.loads(path.read_text(encoding="utf-8"))
+    enchantment_by_id = {enchantment["id"]: enchantment for enchantment in enchantments}
+    blessing_by_id = {blessing["id"]: blessing for blessing in blessings}
+    food_by_recipe = {
+        recipe_id: food for food in foods for recipe_id in food.get("recipes", [])
+    }
+
+    def resolve_enchantments(entries):
+        resolved = []
+        for entry in entries:
+            enchantment = enchantment_by_id.get(entry["id"])
+            if not enchantment:
+                continue
+            resolved.append({"id": entry["id"], "name": enchantment["name"], "reason": entry["reason"]})
+        return resolved
+
+    def resolve_blessings(entries):
+        resolved = []
+        for entry in entries:
+            blessing = blessing_by_id.get(entry["id"])
+            if not blessing:
+                continue
+            resolved.append({"id": entry["id"], "name": blessing["name"], "reason": entry["reason"]})
+        return resolved
+
+    def resolve_consumables(entries):
+        resolved = []
+        for entry in entries:
+            food = food_by_recipe.get(entry["recipe"])
+            if not food:
+                continue
+            resolved.append({"key": food["key"], "name": food["name"], "reason": entry["reason"]})
+        return resolved
+
+    personas = [
+        {
+            "id": persona["id"],
+            "title": persona["title"],
+            "summary": persona.get("summary", ""),
+            "enchantments": resolve_enchantments(persona.get("enchantments", [])),
+            "blessings": resolve_blessings(persona.get("blessings", [])),
+            "consumables": resolve_consumables(persona.get("consumables", [])),
+        }
+        for persona in curation.get("personas", [])
+    ]
+    all_around_raw = curation.get("allAround")
+    all_around = (
+        {
+            "title": all_around_raw["title"],
+            "summary": all_around_raw.get("summary", ""),
+            "enchantments": resolve_enchantments(all_around_raw.get("enchantments", [])),
+            "blessings": resolve_blessings(all_around_raw.get("blessings", [])),
+        }
+        if all_around_raw
+        else None
+    )
+    return {"personas": personas, "allAround": all_around}
+
+
 class Assets:
     def __init__(self, pack: Pack, output: Path, reuse_site: Path | None, fetch_wiki: bool):
         self.pack = pack
@@ -1736,6 +1799,7 @@ def build(
             guides["differences"],
             trades,
         )
+        optimum_builds = build_optimum_builds(enchantments, blessings, foods)
         for recipe in recipes:
             recipe.pop("_components", None)
 
@@ -1760,6 +1824,7 @@ def build(
             "progression": guides["progression"],
             "differences": guides["differences"],
             "spoilers": spoilers,
+            "optimumBuilds": optimum_builds,
             "mechanics": mechanics,
             "overrides": overrides,
             "acquisition": acquisition,

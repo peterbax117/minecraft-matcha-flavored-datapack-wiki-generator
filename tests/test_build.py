@@ -4,7 +4,14 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from datapack_wiki.builder import Assets, Pack, build, build_spoilers, compare_pack_zips
+from datapack_wiki.builder import (
+    Assets,
+    Pack,
+    build,
+    build_optimum_builds,
+    build_spoilers,
+    compare_pack_zips,
+)
 
 
 class BuildTests(unittest.TestCase):
@@ -66,6 +73,51 @@ class BuildTests(unittest.TestCase):
         self.assertIn("main:tutorial/secret", spoilers["hidden"]["advancement"])
         self.assertEqual(spoilers["stages"]["trade"]["example:trade/staged"], 6)
         self.assertNotIn("example:trade/unstaged", spoilers["stages"]["trade"])
+
+    def test_build_optimum_builds_drops_unmatched_curated_ids(self):
+        result = build_optimum_builds(enchantments=[], blessings=[], foods=[])
+        self.assertTrue(result["personas"])
+        for persona in result["personas"]:
+            self.assertEqual(persona["enchantments"], [])
+            self.assertEqual(persona["blessings"], [])
+            self.assertEqual(persona["consumables"], [])
+        self.assertIsNotNone(result["allAround"])
+        self.assertEqual(result["allAround"]["enchantments"], [])
+        self.assertEqual(result["allAround"]["blessings"], [])
+
+    def test_build_optimum_builds_resolves_matching_curated_ids(self):
+        enchantments = [{"id": "main:conduit_power", "name": "Conduit Power"}]
+        blessings = [
+            {
+                "id": "blessings:depth_strider_riptide_aqua_affinity_respiration",
+                "name": "Prayer of Yamm",
+            }
+        ]
+        foods = [
+            {
+                "key": "food:abc123",
+                "name": "Golden Carrot Cupcake",
+                "recipes": ["food:golden_carrot_cupcake"],
+            }
+        ]
+        result = build_optimum_builds(enchantments, blessings, foods)
+        exploring = next(persona for persona in result["personas"] if persona["id"] == "exploring")
+        self.assertIn(
+            {"id": "main:conduit_power", "name": "Conduit Power", "reason": exploring["enchantments"][0]["reason"]},
+            exploring["enchantments"],
+        )
+        self.assertIn(
+            {
+                "id": "blessings:depth_strider_riptide_aqua_affinity_respiration",
+                "name": "Prayer of Yamm",
+                "reason": exploring["blessings"][0]["reason"],
+            },
+            exploring["blessings"],
+        )
+        self.assertIn(
+            {"key": "food:abc123", "name": "Golden Carrot Cupcake", "reason": exploring["consumables"][0]["reason"]},
+            exploring["consumables"],
+        )
 
     def test_compare_version_requires_modrinth_project(self):
         with tempfile.TemporaryDirectory() as temporary:
