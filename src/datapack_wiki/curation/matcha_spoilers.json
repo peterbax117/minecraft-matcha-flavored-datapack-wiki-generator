@@ -1,0 +1,35 @@
+{
+  "recipePrefixes": [
+    {
+      "prefix": "blessings:",
+      "stage": 6,
+      "reason": "The progression guide introduces Blessing crafting after entering the Nether."
+    }
+  ],
+  "advancementPrefixes": [
+    {
+      "prefix": "main:hell/",
+      "stage": 6,
+      "reason": "The progression guide assigns the Hell advancement branch to the Nether stage."
+    },
+    {
+      "prefix": "main:end/",
+      "stage": 7,
+      "reason": "The progression guide assigns the End advancement branch to the final stage."
+    }
+  ],
+  "placeStages": {
+    "minecraft:chests/nether_bridge": 6,
+    "minecraft:chests/bastion_bridge": 6,
+    "minecraft:chests/bastion_hoglin_stable": 6,
+    "minecraft:chests/bastion_other": 6,
+    "minecraft:chests/bastion_treasure": 6,
+    "minecraft:chests/stronghold_corridor": 7,
+    "minecraft:chests/stronghold_crossing": 7,
+    "minecraft:chests/stronghold_library": 7,
+    "minecraft:chests/end_city_treasure": 7
+  },
+  "differenceStages": {
+    "Blessings group related enchantments": 6
+  }
+}

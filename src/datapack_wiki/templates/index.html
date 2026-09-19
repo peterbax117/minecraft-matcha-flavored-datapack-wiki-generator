@@ -4,29 +4,42 @@
 <title>{{PACK_TITLE}} Wiki</title>
 <link rel="stylesheet" href="styles.css">
 </head><body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <header class="sitehead"><span class="cube">▦</span><b>{{PACK_TITLE}} Wiki</b><small>Local datapack reference</small></header>
 <div class="layout">
-<nav class="side"><h3>Contents</h3>
+<nav class="side" aria-label="Wiki contents"><h3>Contents</h3>
+<div class="spoiler-controls">
+<label for="spoiler-mode">Spoiler mode</label>
+<select id="spoiler-mode"><option value="complete">Complete</option><option value="progression">Progression-safe</option><option value="minimal">Minimal</option></select>
+<label for="spoiler-stage">Current stage</label>
+<select id="spoiler-stage"></select>
+<small id="spoiler-status" aria-live="polite"></small>
+</div>
 <button data-page="overview" class="active">Overview</button>
 <button data-page="search">Search everything</button>
 <button data-page="items">Items</button>
 <button data-page="recipes">Recipes</button>
 <button data-page="reverse">Reverse recipe lookup</button>
 <button data-page="obtaining">Obtaining items</button>
+<button data-page="trades">Villager trades</button>
+<button data-page="places">Places and structures</button>
+<button data-page="archaeology">Archaeology</button>
+<button data-page="fishing">Fishing</button>
 <button data-page="food">Food and effects</button>
 <button data-page="enchantments">Enchantments</button>
 <button data-page="blessings">Blessings</button>
 <button data-page="progression">Progression</button>
+<button data-page="releases">Releases and comparison</button>
 <button data-page="differences">Differences from Vanilla</button>
 <button data-page="mechanics">Mechanics</button>
 <button data-page="overrides">Vanilla overrides</button>
 </nav>
-<main>
+<main id="main-content" tabindex="-1">
 <section class="page active" id="overview"><h1>{{PACK_TITLE}}</h1>
 <aside class="infobox"><h3>{{PACK_TITLE}}</h3><table>
 <tr><th>Author</th><td>Klei</td></tr><tr><th>Target</th><td>Minecraft 26.2</td></tr>
 <tr><th>Pack format</th><td>88.0 to 107.1</td></tr><tr><th>Recipes</th><td id="ibox-recipes"></td></tr>
-<tr><th>Food variants</th><td id="ibox-foods"></td></tr><tr><th>Custom enchantments</th><td id="ibox-enchants"></td></tr><tr><th>Type</th><td>Data and resource pack</td></tr>
+<tr><th>Food variants</th><td id="ibox-foods"></td></tr><tr><th>Villager trades</th><td id="ibox-trades"></td></tr><tr><th>Custom enchantments</th><td id="ibox-enchants"></td></tr><tr><th>Type</th><td>Data and resource pack</td></tr>
 </table></aside>
 <p><b>{{PACK_TITLE}}</b> is documented directly from its datapack and resource-pack files.</p>
 <h2>Using this wiki</h2><p>Use <b>Recipes</b> for output and ingredient search. Use <b>Reverse recipe lookup</b> to find what creates or consumes an item.</p>
@@ -43,12 +56,12 @@
 <p class="sub">Browse base items and distinct custom variants without merging items that share a vanilla carrier.</p>
 <div class="searchbox"><label for="item-search">Filter items</label><div class="searchrow">
 <input id="item-search" placeholder="Name, item ID, lore, or property">
-<select id="item-category"><option value="">All categories</option></select>
+<select id="item-category" aria-label="Item category"><option value="">All categories</option></select>
 <button id="clear-items">Clear</button></div></div>
 <div class="stats" id="item-stats"></div><div id="item-results" class="item-grid"></div><div id="item-pager" class="pager"></div></section>
 
 <section class="page" id="recipes"><h1>Recipes</h1>
-<div class="searchbox"><label for="all-search">Search every recipe</label><div class="searchrow"><input id="all-search" placeholder="Benzene, electric wire, minecraft:redstone..."><select id="category"><option value="">All categories</option></select><button id="clear-all">Clear</button></div>
+<div class="searchbox"><label for="all-search">Search every recipe</label><div class="searchrow"><input id="all-search" placeholder="Benzene, electric wire, minecraft:redstone..."><select id="category" aria-label="Recipe category"><option value="">All categories</option></select><button id="clear-all">Clear</button></div>
 <div class="hint">Results are separated into recipes that create the item and recipes that use it.</div></div>
 <div class="stats" id="all-stats"></div><div id="all-results"></div><div id="pager" class="pager"></div></section>
 
@@ -62,12 +75,49 @@
 <datalist id="obtain-item-list"></datalist><div class="hint">Search by pack display name or the underlying Minecraft item ID.</div></div>
 <div id="obtain-results"><div class="empty">Enter an item name or ID to see how it can be obtained.</div></div></section>
 
+<section class="page" id="trades"><h1>Villager trades</h1>
+<p class="sub">Browse pack-defined offers by profession and villager level, including complete costs and bundle contents.</p>
+<div class="searchbox"><label for="trade-search">Filter trades</label><div class="searchrow">
+<input id="trade-search" placeholder="Lava Kit, emerald, Farmer...">
+<select id="trade-profession" aria-label="Villager profession"><option value="">All professions</option></select>
+<select id="trade-level" aria-label="Villager level"><option value="">All levels</option></select>
+<button id="clear-trades">Clear</button></div></div>
+<div class="stats" id="trade-stats"></div><div id="trade-results"></div><div id="trade-pager" class="pager"></div></section>
+
+<section class="page" id="places"><h1>Places and structures</h1>
+<p class="sub">Explore structure-generation definitions and pack-defined chest or archaeology loot locations.</p>
+<div class="searchbox"><label for="place-search">Filter places</label><div class="searchrow">
+<input id="place-search" placeholder="Abbey, forest, Trial Chambers, pottery...">
+<select id="place-kind" aria-label="Place record type"><option value="">All place records</option><option value="Structure definition">Structure definitions</option><option value="Chest loot">Chest loot locations</option><option value="Archaeology">Archaeology locations</option></select>
+<button id="clear-places">Clear</button></div>
+<div class="hint">Structure definitions are separate from loot locations unless the pack explicitly connects them.</div></div>
+<div class="stats" id="place-stats"></div><div id="place-results"></div><div id="place-pager" class="pager"></div></section>
+
+<section class="page" id="archaeology"><h1>Archaeology</h1>
+<p class="sub">Inspect suspicious-block loot pools, direct rewards, referenced tables, weights, and base selection chances.</p>
+<div class="searchbox"><label for="archaeology-search">Filter archaeology tables</label><div class="searchrow">
+<input id="archaeology-search" placeholder="Trail Ruins, pottery sherd, Rusty Axe...">
+<button id="clear-archaeology">Clear</button></div>
+<div class="hint">Base chance is the entry's weight share at luck 0 before nested-table selection or conditions.</div></div>
+<div class="stats" id="archaeology-stats"></div><div id="archaeology-results"></div></section>
+
+<section class="page" id="fishing"><h1>Fishing</h1>
+<p class="sub">Explore biome routing, habitat pools, fish species, junk, and treasure defined by the pack.</p>
+<h2>Catch routing</h2><p class="sub">These top-level entries select eligible tables. Conditions and luck quality affect selection, so their weights are not universal catch percentages.</p>
+<div id="fishing-routes" class="fishing-routes"></div>
+<h2>Fishing tables</h2>
+<div class="searchbox"><label for="fishing-search">Filter fishing content</label><div class="searchrow">
+<input id="fishing-search" placeholder="Swordfish, warm ocean, treasure, nautilus...">
+<select id="fishing-role" aria-label="Fishing content type"><option value="">All fishing content</option><option value="Habitat">Habitat tables</option><option value="Species">Species</option><option value="General rewards">Junk and treasure</option></select>
+<button id="clear-fishing">Clear</button></div></div>
+<div class="stats" id="fishing-stats"></div><div id="fishing-results"></div><div id="fishing-pager" class="pager"></div></section>
+
 <section class="page" id="food"><h1>Food and effects</h1>
 <p class="sub">Nutrition, saturation, status effects, cures, and consumption behavior for custom food variants.</p>
 <div class="searchbox"><label for="food-search">Filter foods</label><div class="searchrow">
 <input id="food-search" placeholder="Grilled Tomatoes, Strength, regeneration...">
-<select id="effect-filter"><option value="">All effects</option></select>
-<select id="effect-kind"><option value="">All behaviors</option><option value="beneficial">Beneficial effects</option><option value="harmful">Harmful effects</option><option value="cleansing">Cleansing foods</option></select>
+<select id="effect-filter" aria-label="Food effect"><option value="">All effects</option></select>
+<select id="effect-kind" aria-label="Food effect behavior"><option value="">All behaviors</option><option value="beneficial">Beneficial effects</option><option value="harmful">Harmful effects</option><option value="cleansing">Cleansing foods</option></select>
 <button id="clear-food">Clear</button></div></div>
 <div class="stats" id="food-stats"></div><div id="food-results"></div><div id="food-pager" class="pager"></div></section>
 
@@ -84,12 +134,23 @@
 <section class="page" id="progression"><h1>Progression</h1>
 <p class="sub">A source-backed route through the pack, followed by its visible advancement catalogue.</p>
 <div id="progression-path"></div>
-<h2>Advancements</h2><div class="searchbox"><label for="advancement-search">Filter advancements</label><div class="searchrow"><input id="advancement-search" placeholder="Copper, Nether, Blessing..."><select id="advancement-section"><option value="">All sections</option></select><button id="clear-advancements">Clear</button></div></div>
+<h2>Advancements</h2><div class="searchbox"><label for="advancement-search">Filter advancements</label><div class="searchrow"><input id="advancement-search" placeholder="Copper, Nether, Blessing..."><select id="advancement-section" aria-label="Advancement section"><option value="">All sections</option></select><button id="clear-advancements">Clear</button></div></div>
 <div class="stats" id="advancement-stats"></div><div id="advancement-results"></div></section>
+
+<section class="page" id="releases"><h1>Releases and comparison</h1>
+<p class="sub">Official Modrinth release history and source-ZIP comparison. Stable releases remain the default; prereleases are shown and labeled.</p>
+<div id="release-summary"></div>
+<div id="version-comparison"></div>
+<h2>Release history</h2>
+<div class="searchbox"><label for="release-search">Filter releases</label><div class="searchrow">
+<input id="release-search" placeholder="1.12, fishing, armour...">
+<select id="release-type" aria-label="Release channel"><option value="">All release channels</option><option value="release">Stable</option><option value="beta">Beta</option><option value="alpha">Alpha</option></select>
+<button id="clear-releases">Clear</button></div></div>
+<div class="stats" id="release-stats"></div><div id="release-results"></div></section>
 
 <section class="page" id="differences"><h1>Differences from Vanilla</h1>
 <p class="sub">Verified changes implemented by the datapack, with source files and provenance.</p>
-<div class="searchbox"><label for="difference-search">Filter changes</label><div class="searchrow"><input id="difference-search" placeholder="Health, sleep, mobs, enchantments..."><select id="difference-category"><option value="">All categories</option></select><button id="clear-differences">Clear</button></div></div>
+<div class="searchbox"><label for="difference-search">Filter changes</label><div class="searchrow"><input id="difference-search" placeholder="Health, sleep, mobs, enchantments..."><select id="difference-category" aria-label="Difference category"><option value="">All categories</option></select><button id="clear-differences">Clear</button></div></div>
 <div class="stats" id="difference-stats"></div><div id="difference-results"></div></section>
 
 <section class="page" id="mechanics"><h1>Gameplay mechanics</h1><div id="mechanic-list"></div></section>

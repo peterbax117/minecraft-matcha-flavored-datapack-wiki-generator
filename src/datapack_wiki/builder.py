@@ -35,6 +35,27 @@ def duration_text(ticks: int | float) -> str:
     return f"{seconds:g}s"
 
 
+def number_provider_text(value, default):
+    if value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return value
+    if not isinstance(value, dict):
+        return str(value)
+    provider_type = value.get("type", "provider").split(":")[-1].replace("_", " ")
+    if provider_type == "constant":
+        return number_provider_text(value.get("value"), default)
+    if provider_type == "uniform":
+        minimum = number_provider_text(value.get("min"), "?")
+        maximum = number_provider_text(value.get("max"), "?")
+        return f"{minimum} to {maximum} (uniform)"
+    if provider_type == "binomial":
+        trials = number_provider_text(value.get("n"), "?")
+        probability = number_provider_text(value.get("p"), "?")
+        return f"binomial (n={trials}, p={probability})"
+    return f"{provider_type}: {json.dumps(value, separators=(',', ':'))}"
+
+
 class Pack:
     def __init__(self, root: Path):
         self.root = root
@@ -518,9 +539,78 @@ def parse_enchantments(pack: Pack, recipes: list[dict], blessings: list[dict]) -
     return result
 
 
-def parse_acquisition(pack: Pack, recipes: list[dict]) -> list[dict]:
+def parse_trades(pack: Pack) -> list[dict]:
+    levels = {"1": "Novice", "2": "Apprentice", "3": "Journeyman", "4": "Expert", "5": "Master"}
+    result = []
+    for namespace_root in sorted(path for path in pack.data.iterdir() if path.is_dir()):
+        trade_root = namespace_root / "villager_trade"
+        if not trade_root.exists():
+            continue
+        for path in sorted(trade_root.rglob("*.json")):
+            raw = pack.read_json(path)
+            gives = raw.get("gives", {})
+            if not isinstance(gives, dict) or not gives.get("id"):
+                continue
+            components = gives.get("components", {})
+            components = components if isinstance(components, dict) else {}
+            result_id = normalize_id(gives["id"])
+            result_name = pack.component_text(components.get("minecraft:item_name")) or pack.item_name(result_id)
+            costs = []
+            for field in ("wants", "additional_wants"):
+                entries = raw.get(field, [])
+                entries = entries if isinstance(entries, list) else [entries]
+                for entry in entries:
+                    if isinstance(entry, dict) and entry.get("id"):
+                        item_id = normalize_id(entry["id"])
+                        costs.append(
+                            {
+                                "id": item_id,
+                                "name": pack.item_name(item_id, entry.get("components")),
+                                "count": number_provider_text(entry.get("count"), 1),
+                                "modelId": entry.get("components", {}).get("minecraft:item_model"),
+                            }
+                        )
+            contents = []
+            for entry in components.get("minecraft:bundle_contents", []):
+                if isinstance(entry, dict) and entry.get("id"):
+                    item_id = normalize_id(entry["id"])
+                    contents.append(
+                        {
+                            "id": item_id,
+                            "name": pack.item_name(item_id, entry.get("components")),
+                            "count": number_provider_text(entry.get("count"), 1),
+                            "modelId": entry.get("components", {}).get("minecraft:item_model"),
+                        }
+                    )
+            relative = path.relative_to(trade_root)
+            namespace = namespace_root.name
+            result.append(
+                {
+                    "id": f"{namespace}:{relative.with_suffix('').as_posix()}",
+                    "profession": relative.parts[0].replace("_", " ").title(),
+                    "level": levels.get(relative.parts[1], relative.parts[1]) if len(relative.parts) > 2 else "Any",
+                    "costs": costs,
+                    "result": {
+                        "id": result_id,
+                        "name": result_name,
+                        "count": number_provider_text(gives.get("count"), 1),
+                        "modelId": components.get("minecraft:item_model"),
+                    },
+                    "bundleContents": contents,
+                    "maxUses": number_provider_text(raw.get("max_uses"), 4),
+                    "xp": number_provider_text(raw.get("xp"), 1),
+                    "reputationDiscount": number_provider_text(raw.get("reputation_discount"), 0),
+                    "source": f"data/{namespace}/villager_trade/{relative.as_posix()}",
+                }
+            )
+    return result
+
+
+def parse_acquisition(pack: Pack, recipes: list[dict], trades: list[dict]) -> list[dict]:
     names = {}
-    acquired = defaultdict(lambda: {"recipes": [], "sources": [], "trades": []})
+    acquired = defaultdict(
+        lambda: {"recipes": [], "sources": [], "sourceVariants": [], "trades": []}
+    )
     for recipe in recipes:
         names[recipe["resultId"]] = recipe["resultName"]
         acquired[recipe["resultId"]]["recipes"].append(recipe["id"])
@@ -539,35 +629,58 @@ def parse_acquisition(pack: Pack, recipes: list[dict]) -> list[dict]:
         if table_id in seen:
             return set()
         seen.add(table_id)
-        found = set()
+        found = {}
 
         def walk(value):
             if isinstance(value, dict):
                 if value.get("type") == "minecraft:item" and value.get("name"):
-                    found.add(normalize_id(value["name"]))
+                    item_id = normalize_id(value["name"])
+                    components = {}
+                    for function in value.get("functions", []):
+                        if function.get("function", "").endswith("set_components"):
+                            components.update(function.get("components", {}))
+                    item = {
+                        "id": item_id,
+                        "name": pack.item_name(item_id, components),
+                        "modelId": components.get("minecraft:item_model"),
+                    }
+                    key = (item["id"], item["name"], item["modelId"])
+                    found[key] = item
                 elif value.get("type") == "minecraft:loot_table":
                     reference = value.get("value") or value.get("name")
                     if isinstance(reference, str):
-                        found.update(contents(normalize_id(reference), seen.copy()))
+                        for item in contents(normalize_id(reference), seen.copy()):
+                            key = (item["id"], item["name"], item.get("modelId"))
+                            found[key] = item
                 for child in value.values():
                     walk(child)
             elif isinstance(value, list):
                 for child in value:
                     walk(child)
         walk(tables.get(table_id, {}))
-        return found
+        return list(found.values())
 
     def source_label(table_id):
         path = table_id.split(":", 1)[1]
         parts = path.split("/")
         pretty = lambda value: value.replace("_", " ").title()
         if parts[0] == "chests":
-            location = pretty(" ".join(parts[1:]))
+            if len(parts) > 1 and parts[1] == "equipment":
+                return None
+            location_parts = parts[1:]
+            if location_parts and location_parts[0] == "village":
+                location_parts[-1] = location_parts[-1].removeprefix("village_")
+            location = pretty(" ".join(location_parts))
             if path == "chests/village/village_snowy_house":
                 location = "Snowy Village House"
             return "Chest loot", location
         if parts[0] == "archaeology":
-            location = "Trail Ruins (common)" if path == "archaeology/trail_ruins_common" else pretty(" ".join(parts[1:]))
+            if path == "archaeology/trail_ruins_common":
+                location = "Trail Ruins (common)"
+            elif path == "archaeology/trail_ruins_rare":
+                location = "Trail Ruins (rare)"
+            else:
+                location = pretty(" ".join(parts[1:]))
             return "Archaeology", location
         if parts[0] == "blocks":
             location = "Harvest a mature Tomato crop" if parts[-1] == "beetroots" else "Harvest or break " + pretty(" ".join(parts[1:]))
@@ -584,10 +697,14 @@ def parse_acquisition(pack: Pack, recipes: list[dict]) -> list[dict]:
         label = source_label(table_id)
         if not label:
             continue
-        for item_id in contents(table_id):
-            names.setdefault(item_id, pack.item_name(item_id))
-            acquired[item_id]["sources"].append(
-                {"kind": label[0], "location": label[1], "id": table_id}
+        for item in contents(table_id):
+            item_id = item["id"]
+            names.setdefault(item_id, item["name"])
+            source = {"kind": label[0], "location": label[1], "id": table_id}
+            acquired[item_id]["sources"].append(source)
+            acquired[item_id]["sourceVariants"].append(
+                {"kind": label[0], "location": label[1], "sourceId": table_id}
+                | item
             )
     for item_id in ("minecraft:beetroot", "minecraft:beetroot_seeds"):
         acquired[item_id]["sources"].append(
@@ -598,40 +715,21 @@ def parse_acquisition(pack: Pack, recipes: list[dict]) -> list[dict]:
             }
         )
 
-    trade_root = pack.data / "minecraft/villager_trade"
-    levels = {"1": "Novice", "2": "Apprentice", "3": "Journeyman", "4": "Expert", "5": "Master"}
-    if trade_root.exists():
-        for path in sorted(trade_root.rglob("*.json")):
-            raw = pack.read_json(path)
-            gives = raw.get("gives", {})
-            result_id = normalize_id(gives.get("id"))
-            components = gives.get("components", {})
-            custom_name = pack.component_text(components.get("minecraft:item_name"))
-            outputs = [(result_id, None)]
-            for entry in components.get("minecraft:bundle_contents", []):
-                if entry.get("id"):
-                    outputs.append((normalize_id(entry["id"]), custom_name or pack.item_name(result_id)))
-            relative = path.relative_to(trade_root)
-            profession = relative.parts[0].replace("_", " ").title()
-            level = levels.get(relative.parts[1], relative.parts[1]) if len(relative.parts) > 2 else "Any"
-            wants = raw.get("wants", {})
-            wants = wants if isinstance(wants, list) else [wants]
-            costs = []
-            for cost in wants:
-                if isinstance(cost, dict) and cost.get("id"):
-                    cost_id = normalize_id(cost["id"])
-                    costs.append(f"{cost.get('count', 1)} {pack.item_name(cost_id)}")
-            for item_id, container in outputs:
-                names.setdefault(item_id, pack.item_name(item_id))
-                trade = {
-                    "profession": profession,
-                    "level": level,
-                    "cost": " + ".join(costs) or "Trade cost defined by pack",
-                    "id": "minecraft:" + path.relative_to(pack.data / "minecraft").with_suffix("").as_posix(),
-                }
-                if container:
-                    trade["container"] = container
-                acquired[item_id]["trades"].append(trade)
+    for trade in trades:
+        outputs = [(trade["result"], None)]
+        outputs.extend((item, trade["result"]["name"]) for item in trade["bundleContents"])
+        cost = " + ".join(f"{item['count']} {item['name']}" for item in trade["costs"])
+        for output, container in outputs:
+            names.setdefault(output["id"], output["name"])
+            acquisition_trade = {
+                "profession": trade["profession"],
+                "level": trade["level"],
+                "cost": cost or "Trade cost defined by pack",
+                "id": trade["id"],
+            }
+            if container:
+                acquisition_trade["container"] = container
+            acquired[output["id"]]["trades"].append(acquisition_trade)
 
     result = []
     for item_id, name in sorted(names.items(), key=lambda pair: pair[1].lower()):
@@ -641,7 +739,7 @@ def parse_acquisition(pack: Pack, recipes: list[dict]) -> list[dict]:
             for item in record["sources"]
         }
         trades = {
-            (item["profession"], item["level"], item["cost"], item["id"]): item
+            (item["profession"], item["level"], item["cost"], item["id"], item.get("container")): item
             for item in record["trades"]
         }
         namespace, raw_name = split_id(item_id)
@@ -651,12 +749,463 @@ def parse_acquisition(pack: Pack, recipes: list[dict]) -> list[dict]:
                 "name": name,
                 "recipes": sorted(set(record["recipes"])),
                 "sources": list(sources.values()),
+                "sourceVariants": record["sourceVariants"],
                 "trades": list(trades.values()),
                 "wiki": "https://minecraft.wiki/w/" + "_".join(word.capitalize() for word in raw_name.split("_"))
                 if namespace == "minecraft" else None,
             }
         )
     return result
+
+
+def parse_places(pack: Pack, acquisition: list[dict]) -> dict:
+    structures = {}
+    for namespace_root in sorted(path for path in pack.data.iterdir() if path.is_dir()):
+        structure_root = namespace_root / "worldgen/structure"
+        if not structure_root.exists():
+            continue
+        for path in sorted(structure_root.rglob("*.json")):
+            relative = path.relative_to(structure_root)
+            namespace = namespace_root.name
+            structure_id = f"{namespace}:{relative.with_suffix('').as_posix()}"
+            raw = pack.read_json(path)
+            selector = raw.get("biomes")
+            if isinstance(selector, list):
+                biomes = [normalize_id(item) for item in selector if isinstance(item, str)]
+            elif isinstance(selector, str) and selector.startswith("#"):
+                namespace, tag = split_id(selector[1:])
+                tag_path = pack.data / namespace / f"tags/worldgen/biome/{tag}.json"
+                values = pack.read_json(tag_path).get("values", [])
+                biomes = [normalize_id(item) for item in values if isinstance(item, str)]
+            elif isinstance(selector, str):
+                biomes = [normalize_id(selector)]
+            else:
+                biomes = []
+            structures[structure_id] = {
+                "kind": "Structure definition",
+                "id": structure_id,
+                "name": relative.stem.replace("_", " ").title(),
+                "type": raw.get("type"),
+                "biomeSelector": selector,
+                "biomes": biomes,
+                "step": raw.get("step"),
+                "terrainAdaptation": raw.get("terrain_adaptation"),
+                "startPool": raw.get("start_pool"),
+                "size": raw.get("size"),
+                "maxDistance": raw.get("max_distance_from_center"),
+                "startHeight": raw.get("start_height"),
+                "placement": None,
+                "source": f"data/{namespace}/worldgen/structure/{relative.as_posix()}",
+            }
+
+    for namespace_root in sorted(path for path in pack.data.iterdir() if path.is_dir()):
+        set_root = namespace_root / "worldgen/structure_set"
+        if not set_root.exists():
+            continue
+        for path in sorted(set_root.rglob("*.json")):
+            raw = pack.read_json(path)
+            relative = path.relative_to(set_root)
+            namespace = namespace_root.name
+            placement = raw.get("placement", {})
+            placement_record = {
+                "setId": f"{namespace}:{relative.with_suffix('').as_posix()}",
+                "type": placement.get("type"),
+                "spacing": placement.get("spacing"),
+                "separation": placement.get("separation"),
+                "salt": placement.get("salt"),
+                "exclusionZone": placement.get("exclusion_zone"),
+                "source": f"data/{namespace}/worldgen/structure_set/{relative.as_posix()}",
+            }
+            for entry in raw.get("structures", []):
+                structure_id = entry.get("structure") if isinstance(entry, dict) else entry
+                if structure_id in structures:
+                    structures[structure_id]["placement"] = placement_record
+
+    locations = {}
+    for item in acquisition:
+        for source in item["sources"]:
+            if source["kind"] not in {"Chest loot", "Archaeology"}:
+                continue
+            location = locations.setdefault(
+                source["id"],
+                {
+                    "kind": source["kind"],
+                    "id": source["id"],
+                    "name": source["location"],
+                    "items": [],
+                    "source": "data/"
+                    + source["id"].replace(":", "/loot_table/", 1)
+                    + ".json",
+                },
+            )
+            variants = [
+                variant
+                for variant in item.get("sourceVariants", [])
+                if variant["sourceId"] == source["id"]
+            ]
+            location["items"].extend(
+                {
+                    "id": variant.get("id", item["id"]),
+                    "name": variant.get("name", item["name"]),
+                    "modelId": variant.get("modelId"),
+                }
+                for variant in variants or [item]
+            )
+    for location in locations.values():
+        location["items"] = list(
+            {
+                (item["id"], item["name"], item.get("modelId")): item
+                for item in location["items"]
+            }.values()
+        )
+        location["items"].sort(key=lambda item: item["name"].lower())
+    return {
+        "structures": sorted(structures.values(), key=lambda item: item["name"].lower()),
+        "locations": sorted(locations.values(), key=lambda item: (item["kind"], item["name"].lower())),
+    }
+
+
+def parse_archaeology(pack: Pack) -> list[dict]:
+    tables = {}
+    for namespace_root in sorted(path for path in pack.data.iterdir() if path.is_dir()):
+        loot_root = namespace_root / "loot_table"
+        if not loot_root.exists():
+            continue
+        for path in loot_root.rglob("*.json"):
+            relative = path.relative_to(loot_root)
+            table_id = f"{namespace_root.name}:{relative.with_suffix('').as_posix()}"
+            tables[table_id] = (pack.read_json(path), path)
+
+    def item_entry(entry):
+        item_id = normalize_id(entry.get("name"))
+        components = {}
+        for function in entry.get("functions", []):
+            if function.get("function", "").endswith("set_components"):
+                components.update(function.get("components", {}))
+        return {
+            "id": item_id,
+            "name": pack.item_name(item_id, components),
+            "modelId": components.get("minecraft:item_model"),
+        }
+
+    def resolve(table_id, seen=None):
+        seen = set() if seen is None else seen
+        if table_id in seen or table_id not in tables:
+            return []
+        seen.add(table_id)
+        found = {}
+        raw, _ = tables[table_id]
+        for pool in raw.get("pools", []):
+            for entry in pool.get("entries", []):
+                entry_type = entry.get("type")
+                if entry_type == "minecraft:item" and entry.get("name"):
+                    item = item_entry(entry)
+                    found[item["id"] + "\0" + item["name"]] = item
+                elif entry_type == "minecraft:loot_table":
+                    reference = entry.get("value") or entry.get("name")
+                    if isinstance(reference, str):
+                        for item in resolve(normalize_id(reference), seen.copy()):
+                            found[item["id"] + "\0" + item["name"]] = item
+        return sorted(found.values(), key=lambda item: item["name"].lower())
+
+    result = []
+    for table_id, (raw, path) in sorted(tables.items()):
+        if ":archaeology/" not in table_id:
+            continue
+        entries = []
+        pool_rolls = []
+        for pool_index, pool in enumerate(raw.get("pools", []), start=1):
+            pool_entries = pool.get("entries", [])
+            total_weight = sum(
+                entry.get("weight", 1)
+                for entry in pool_entries
+                if isinstance(entry.get("weight", 1), (int, float))
+            )
+            pool_rolls.append(number_provider_text(pool.get("rolls"), 1))
+            for entry in pool_entries:
+                entry_type = entry.get("type")
+                weight = entry.get("weight", 1)
+                base_chance = (
+                    round(weight / total_weight * 100, 2)
+                    if isinstance(weight, (int, float)) and total_weight
+                    else None
+                )
+                if entry_type == "minecraft:item" and entry.get("name"):
+                    item = item_entry(entry)
+                    entries.append(
+                        {
+                            "kind": "Item",
+                            **item,
+                            "pool": pool_index,
+                            "weight": number_provider_text(weight, 1),
+                            "quality": number_provider_text(entry.get("quality"), 0),
+                            "baseChance": base_chance,
+                            "conditional": bool(entry.get("conditions")),
+                            "resolvedItems": [],
+                        }
+                    )
+                elif entry_type == "minecraft:loot_table":
+                    reference = entry.get("value") or entry.get("name")
+                    if isinstance(reference, str):
+                        reference = normalize_id(reference)
+                        entries.append(
+                            {
+                                "kind": "Referenced table",
+                                "id": reference,
+                                "name": reference.split(":", 1)[1].replace("_", " ").replace("/", " / ").title(),
+                                "pool": pool_index,
+                                "weight": number_provider_text(weight, 1),
+                                "quality": number_provider_text(entry.get("quality"), 0),
+                                "baseChance": base_chance,
+                                "conditional": bool(entry.get("conditions")),
+                                "resolvedItems": resolve(reference),
+                            }
+                        )
+        relative = path.relative_to(pack.data)
+        raw_name = table_id.split(":", 1)[1].removeprefix("archaeology/")
+        name = raw_name.replace("_", " ").replace("/", " ").title()
+        if raw_name == "trail_ruins_common":
+            name = "Trail Ruins (common)"
+        elif raw_name == "trail_ruins_rare":
+            name = "Trail Ruins (rare)"
+        result.append(
+            {
+                "id": table_id,
+                "name": name,
+                "tableType": raw.get("type"),
+                "rolls": pool_rolls,
+                "entries": entries,
+                "source": f"data/{relative.as_posix()}",
+            }
+        )
+    return result
+
+
+def parse_fishing(pack: Pack) -> dict:
+    tables = {}
+    fishing_ids = set()
+    for namespace_root in sorted(path for path in pack.data.iterdir() if path.is_dir()):
+        loot_root = namespace_root / "loot_table"
+        if not loot_root.exists():
+            continue
+        for path in sorted(loot_root.rglob("*.json")):
+            relative = path.relative_to(loot_root)
+            table_id = f"{namespace_root.name}:{relative.with_suffix('').as_posix()}"
+            tables[table_id] = (pack.read_json(path), path)
+            relative_id = relative.with_suffix("").as_posix()
+            if relative_id == "gameplay/fishing" or relative_id.startswith("gameplay/fishing/"):
+                fishing_ids.add(table_id)
+
+    def item_entry(entry):
+        item_id = normalize_id(entry.get("name"))
+        components = {}
+        modifiers = []
+        for function in entry.get("functions", []):
+            function_type = function.get("function", "").split(":")[-1]
+            if function_type == "set_components":
+                components.update(function.get("components", {}))
+            elif function_type == "set_potion":
+                modifiers.append("Potion: " + str(function.get("id", "specified by pack")))
+            elif function_type == "set_count":
+                modifiers.append("Count: " + str(number_provider_text(function.get("count"), 1)))
+            elif function_type == "set_damage":
+                modifiers.append("Randomized durability")
+            elif function_type == "enchant_with_levels":
+                modifiers.append("Random enchantments")
+            elif function_type == "set_contents":
+                modifiers.append("Contains pack-defined items")
+            elif function_type:
+                modifiers.append(function_type.replace("_", " ").title())
+        name = pack.item_name(item_id, components)
+        if name.startswith(("item.", "block.")):
+            name = name.rsplit(".", 1)[-1].replace("_", " ").title()
+        return {
+            "id": item_id,
+            "name": name,
+            "modifiers": modifiers,
+            "modelId": components.get("minecraft:item_model"),
+        }
+
+    def condition_text(condition):
+        condition_type = condition.get("condition", "").split(":")[-1]
+        if condition_type == "entity_properties":
+            hook = condition.get("predicate", {}).get("minecraft:type_specific/fishing_hook", {})
+            if hook.get("in_open_water") is True:
+                return "Open water only"
+        if condition_type == "location_check":
+            biomes = condition.get("predicate", {}).get("biomes")
+            if isinstance(biomes, list):
+                return "Biomes: " + ", ".join(biomes)
+            if biomes:
+                return "Biome: " + str(biomes)
+        return condition_type.replace("_", " ").title() or "Conditional"
+
+    def direct_items(table_id, seen=None):
+        seen = set() if seen is None else seen
+        if table_id in seen or table_id not in tables:
+            return []
+        seen.add(table_id)
+        found = {}
+        raw, _ = tables[table_id]
+        for pool in raw.get("pools", []):
+            for entry in pool.get("entries", []):
+                if entry.get("type") == "minecraft:item" and entry.get("name"):
+                    item = item_entry(entry)
+                    found[item["id"] + "\0" + item["name"]] = item
+                elif entry.get("type") == "minecraft:loot_table":
+                    reference = entry.get("value") or entry.get("name")
+                    if isinstance(reference, str):
+                        for item in direct_items(normalize_id(reference), seen.copy()):
+                            found[item["id"] + "\0" + item["name"]] = item
+        return sorted(found.values(), key=lambda item: item["name"].lower())
+
+    def table_entries(raw):
+        result = []
+        for pool_index, pool in enumerate(raw.get("pools", []), start=1):
+            entries = pool.get("entries", [])
+            has_conditions = any(entry.get("conditions") for entry in entries)
+            total_weight = sum(
+                entry.get("weight", 1)
+                for entry in entries
+                if isinstance(entry.get("weight", 1), (int, float))
+            )
+            for entry in entries:
+                weight = entry.get("weight", 1)
+                base_chance = (
+                    round(weight / total_weight * 100, 2)
+                    if not has_conditions and isinstance(weight, (int, float)) and total_weight
+                    else None
+                )
+                conditions = [condition_text(item) for item in entry.get("conditions", [])]
+                if entry.get("type") == "minecraft:item" and entry.get("name"):
+                    item = item_entry(entry)
+                    result.append(
+                        {
+                            "kind": "Item",
+                            **item,
+                            "pool": pool_index,
+                            "weight": number_provider_text(weight, 1),
+                            "quality": number_provider_text(entry.get("quality"), 0),
+                            "baseChance": base_chance,
+                            "conditions": conditions,
+                            "resolvedItems": [],
+                        }
+                    )
+                elif entry.get("type") == "minecraft:loot_table":
+                    reference = entry.get("value") or entry.get("name")
+                    if isinstance(reference, str):
+                        reference = normalize_id(reference)
+                        resolved = direct_items(reference)
+                        result.append(
+                            {
+                                "kind": "Referenced table",
+                                "id": reference,
+                                "name": resolved[0]["name"] if len(resolved) == 1 else reference.split("/")[-1].replace("_", " ").title(),
+                                "modifiers": [],
+                                "pool": pool_index,
+                                "weight": number_provider_text(weight, 1),
+                                "quality": number_provider_text(entry.get("quality"), 0),
+                                "baseChance": base_chance,
+                                "conditions": conditions,
+                                "resolvedItems": resolved,
+                            }
+                        )
+        return result
+
+    routes = []
+    route_biomes = defaultdict(set)
+    globally_eligible = set()
+    references = defaultdict(set)
+    for table_id in fishing_ids:
+        raw, _ = tables[table_id]
+        for pool in raw.get("pools", []):
+            for entry in pool.get("entries", []):
+                if entry.get("type") == "minecraft:loot_table":
+                    reference = entry.get("value") or entry.get("name")
+                    if isinstance(reference, str):
+                        references[table_id].add(normalize_id(reference))
+
+    def reachable(start):
+        found = set()
+        pending = [start]
+        while pending:
+            table_id = pending.pop()
+            if table_id in found:
+                continue
+            found.add(table_id)
+            pending.extend(references.get(table_id, set()) - found)
+        return found
+
+    records = []
+    for table_id in sorted(fishing_ids):
+        raw, path = tables[table_id]
+        relative_id = table_id.split(":", 1)[1]
+        entries = table_entries(raw)
+        if relative_id == "gameplay/fishing":
+            for entry in entries:
+                routes.append(entry)
+                selectors = []
+                for condition in entry["conditions"]:
+                    if condition.startswith("Biome: "):
+                        selectors.append(condition.removeprefix("Biome: "))
+                    elif condition.startswith("Biomes: "):
+                        selectors.extend(
+                            value.strip() for value in condition.removeprefix("Biomes: ").split(",")
+                        )
+                descendants = reachable(entry["id"])
+                if selectors:
+                    for descendant in descendants:
+                        route_biomes[descendant].update(selectors)
+                else:
+                    globally_eligible.update(descendants)
+            continue
+        role = "Species" if "/fish/" in relative_id else (
+            "General rewards" if relative_id.endswith(("/junk", "/treasure")) else "Habitat"
+        )
+        raw_name = relative_id.split("/")[-1]
+        name = raw_name.replace("_", " ").title()
+        if role == "Species" and len(entries) == 1:
+            name = entries[0]["name"]
+        relative = path.relative_to(pack.data)
+        records.append(
+            {
+                "id": table_id,
+                "name": name,
+                "role": role,
+                "entries": entries,
+                "biomeSelectors": [],
+                "biomes": [],
+                "globalBiomes": False,
+                "active": False,
+                "source": f"data/{relative.as_posix()}",
+            }
+        )
+
+    for record in records:
+        if record["id"] in globally_eligible:
+            record["globalBiomes"] = True
+            record["active"] = True
+            continue
+        selectors = sorted(route_biomes.get(record["id"], set()))
+        record["biomeSelectors"] = selectors
+        record["active"] = bool(selectors)
+        biomes = []
+        for selector in selectors:
+            if selector.startswith("#"):
+                namespace, tag = split_id(selector[1:])
+                tag_path = pack.data / namespace / f"tags/worldgen/biome/{tag}.json"
+                biomes.extend(
+                    normalize_id(value)
+                    for value in pack.read_json(tag_path).get("values", [])
+                    if isinstance(value, str)
+                )
+            else:
+                biomes.append(normalize_id(selector))
+        record["biomes"] = sorted(set(biomes))
+    return {
+        "routes": routes,
+        "tables": sorted(records, key=lambda item: (item["role"], item["name"].lower())),
+    }
 
 
 def parse_advancements(pack: Pack) -> list[dict]:
@@ -686,6 +1235,10 @@ def parse_advancements(pack: Pack) -> list[dict]:
                 "hidden": display.get("hidden", False),
                 "parent": raw.get("parent"),
                 "iconId": normalize_id(icon.get("id")) if isinstance(icon, dict) and icon.get("id") else None,
+                "iconModelId": (
+                    (icon.get("components") or {}).get("minecraft:item_model")
+                    if isinstance(icon, dict) else None
+                ),
                 "source": f"data/main/advancement/{relative.as_posix()}",
             }
         )
@@ -705,6 +1258,69 @@ def parse_guides() -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def build_spoilers(recipes, items, blessings, advancements, progression, places, differences, trades=()):
+    path = PACKAGE_ROOT / "curation/matcha_spoilers.json"
+    rules = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    stages = defaultdict(dict)
+    hidden = defaultdict(list)
+
+    for stage, section in enumerate(progression, start=1):
+        for advancement_id in section.get("advancements", []):
+            stages["advancement"][advancement_id] = stage
+    for advancement in advancements:
+        for rule in rules.get("advancementPrefixes", []):
+            if advancement["id"].startswith(rule["prefix"]):
+                stages["advancement"][advancement["id"]] = rule["stage"]
+        if advancement.get("hidden"):
+            hidden["advancement"].append(advancement["id"])
+
+    staged_recipe_ids = {}
+    for recipe in recipes:
+        for rule in rules.get("recipePrefixes", []):
+            if recipe["id"].startswith(rule["prefix"]):
+                stages["recipe"][recipe["id"]] = rule["stage"]
+                staged_recipe_ids[recipe["id"]] = rule["stage"]
+    for item in items:
+        item_stages = [
+            staged_recipe_ids[recipe_id]
+            for recipe_id in item.get("outputOf", [])
+            if recipe_id in staged_recipe_ids
+        ]
+        if item_stages:
+            stages["item"][item["key"]] = min(item_stages)
+    for blessing in blessings:
+        stages["blessing"][blessing["id"]] = 6
+    stages["place"].update(rules.get("placeStages", {}))
+    stages["difference"].update(rules.get("differenceStages", {}))
+
+    item_stage_by_id = {}
+    for item in items:
+        stage = stages["item"].get(item["key"])
+        if stage is not None:
+            item_stage_by_id[item["id"]] = min(stage, item_stage_by_id.get(item["id"], stage))
+    for trade in trades:
+        trade_stage = None
+        for rule in rules.get("tradePrefixes", []):
+            if trade["id"].startswith(rule["prefix"]):
+                trade_stage = rule["stage"]
+                break
+        if trade_stage is None:
+            candidate_ids = [trade["result"]["id"], *(entry["id"] for entry in trade.get("bundleContents", []))]
+            candidate_stages = [item_stage_by_id[cid] for cid in candidate_ids if cid in item_stage_by_id]
+            if candidate_stages:
+                trade_stage = min(candidate_stages)
+        if trade_stage is not None:
+            stages["trade"][trade["id"]] = trade_stage
+    return {
+        "defaultMode": "complete",
+        "defaultStage": 1,
+        "stageCount": len(progression),
+        "stages": dict(stages),
+        "hidden": dict(hidden),
+        "policy": "Only source-backed progression gates and explicitly hidden pack content are classified. Unclassified content remains visible.",
+    }
+
+
 class Assets:
     def __init__(self, pack: Pack, output: Path, reuse_site: Path | None, fetch_wiki: bool):
         self.pack = pack
@@ -714,6 +1330,7 @@ class Assets:
         self.cache = Path.home() / "AppData/Local/minecraft-datapack-wiki/cache"
         self.reuse_recipe = {}
         self.reuse_item = {}
+        self.failed_wiki = set()
         if reuse_site:
             self._load_reuse(reuse_site)
 
@@ -735,28 +1352,35 @@ class Assets:
 
     def _local(self, item_id, model_id=None):
         namespace, name = split_id(model_id or item_id)
-        if namespace != "minecraft":
-            return None
-        definition = self.pack.read_json(self.pack.assets / f"items/{name}.json")
-        model_name = definition.get("model", {}).get("model", name)
-        model_name = model_name.removeprefix("minecraft:").removeprefix("item/")
-        model = self.pack.read_json(self.pack.assets / f"models/item/{model_name}.json")
+        assets = self.pack.root / "assets" / namespace
+        definition = self.pack.read_json(assets / f"items/{name}.json")
+        model_reference = definition.get("model", {}).get("model", f"{namespace}:item/{name}")
+        model_namespace, model_path = split_id(model_reference)
+        model_name = model_path.removeprefix("item/").removeprefix("block/")
+        model_assets = self.pack.root / "assets" / model_namespace
+        model = self.pack.read_json(model_assets / f"models/{model_path}.json")
         texture = model.get("textures", {}).get("layer0")
         candidates = []
         if texture:
-            candidates.append(self.pack.assets / f"textures/{texture.removeprefix('minecraft:')}.png")
+            texture_namespace, texture_name = split_id(texture)
+            candidates.append(
+                self.pack.root / "assets" / texture_namespace / f"textures/{texture_name}.png"
+            )
         candidates.extend(
             (
-                self.pack.assets / f"textures/item/{model_name}.png",
-                self.pack.assets / f"textures/item/{name}.png",
-                self.pack.assets / f"textures/block/{name}.png",
+                model_assets / f"textures/item/{model_name}.png",
+                assets / f"textures/item/{name}.png",
+                assets / f"textures/block/{name}.png",
             )
         )
         return next((path.read_bytes() for path in candidates if path.exists()), None)
 
     def _wiki(self, item_id):
+        if item_id in self.failed_wiki:
+            return None
         namespace, name = split_id(item_id)
         if namespace != "minecraft" or item_id.startswith("#"):
+            self.failed_wiki.add(item_id)
             return None
         filename = "Invicon_" + "_".join(word.capitalize() for word in name.split("_")) + ".png"
         cached = self.cache / filename
@@ -770,11 +1394,13 @@ class Assets:
             with urllib.request.urlopen(request, timeout=20) as response:
                 content = response.read()
             if not content.startswith((b"\x89PNG", b"GIF8")):
+                self.failed_wiki.add(item_id)
                 return None
             self.cache.mkdir(parents=True, exist_ok=True)
             cached.write_bytes(content)
             return content
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+            self.failed_wiki.add(item_id)
             return None
 
     def save(self, content):
@@ -783,9 +1409,33 @@ class Assets:
         extension = ".gif" if content.startswith(b"GIF8") else ".png"
         name = hashlib.sha256(content).hexdigest()[:20] + extension
         path = self.image_dir / name
+        self.image_dir.mkdir(parents=True, exist_ok=True)
         if not path.exists():
             path.write_bytes(content)
         return "images/" + name
+
+    def item_icon(self, item_id, model_id=None):
+        content = self._local(item_id, model_id)
+        fallback_id = normalize_id(model_id or item_id)
+        if not content:
+            content = self.reuse_item.get(fallback_id)
+        if not content and self.fetch_wiki:
+            content = self._wiki(fallback_id)
+        return self.save(content)
+
+    def apply_item_icons(self, items):
+        items = list(items)
+        missing = {
+            normalize_id(item.get("modelId") or item["id"])
+            for item in items
+            if not self._local(item["id"], item.get("modelId"))
+            and not self.reuse_item.get(normalize_id(item.get("modelId") or item["id"]))
+        }
+        if self.fetch_wiki and missing:
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                list(pool.map(self._wiki, sorted(missing)))
+        for item in items:
+            item["icon"] = self.item_icon(item["id"], item.get("modelId"))
 
     def apply(self, recipes):
         self.image_dir.mkdir(parents=True, exist_ok=True)
@@ -831,9 +1481,191 @@ def metadata(pack: Pack, pack_path: Path) -> dict:
     }
 
 
-def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None) -> None:
+def compare_pack_zips(current_path: Path, baseline_path: Path) -> dict:
+    def files(path):
+        with zipfile.ZipFile(path) as archive:
+            return {
+                item.filename.replace("\\", "/"): hashlib.sha256(archive.read(item)).hexdigest()
+                for item in archive.infolist()
+                if not item.is_dir()
+            }
+
+    def category(path):
+        match = re.match(
+            r"data/([^/]+)/(recipe|villager_trade|loot_table|advancement|enchantment|worldgen/structure)/(.+)\.json$",
+            path,
+        )
+        if match:
+            labels = {
+                "recipe": "Recipes",
+                "villager_trade": "Villager trades",
+                "loot_table": "Loot tables",
+                "advancement": "Advancements",
+                "enchantment": "Enchantments",
+                "worldgen/structure": "Structures",
+            }
+            return labels[match.group(2)], f"{match.group(1)}:{match.group(3)}"
+        if path.startswith("assets/"):
+            return "Resource-pack assets", path.removeprefix("assets/")
+        if path.startswith("data/"):
+            return "Other datapack files", path.removeprefix("data/")
+        return "Pack metadata", path
+
+    current = files(current_path)
+    baseline = files(baseline_path)
+    added_paths = sorted(current.keys() - baseline.keys())
+    removed_paths = sorted(baseline.keys() - current.keys())
+    changed_paths = sorted(path for path in current.keys() & baseline.keys() if current[path] != baseline[path])
+    grouped = defaultdict(lambda: {"added": [], "removed": [], "changed": []})
+    for state, paths in (("added", added_paths), ("removed", removed_paths), ("changed", changed_paths)):
+        for path in paths:
+            label, item_id = category(path)
+            grouped[label][state].append({"id": item_id, "path": path})
+    return {
+        "summary": {
+            "added": len(added_paths),
+            "removed": len(removed_paths),
+            "changed": len(changed_paths),
+            "unchanged": sum(current[path] == baseline[path] for path in current.keys() & baseline.keys()),
+        },
+        "categories": [
+            {"name": name, **changes}
+            for name, changes in sorted(grouped.items())
+        ],
+    }
+
+
+def modrinth_history(project_slug: str, pack_path: Path, compare_version=None) -> dict:
+    def api_json(url):
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.loads(response.read())
+
+    project = api_json(f"https://api.modrinth.com/v2/project/{urllib.parse.quote(project_slug)}")
+    versions = api_json(f"https://api.modrinth.com/v2/project/{urllib.parse.quote(project_slug)}/version")
+    local_sha512 = hashlib.sha512(pack_path.read_bytes()).hexdigest()
+    current_match = next(
+        (
+            (version, file)
+            for version in versions
+            for file in version.get("files", [])
+            if file.get("hashes", {}).get("sha512") == local_sha512
+        ),
+        None,
+    )
+    current, current_file = current_match or (None, None)
+    stable = [version for version in versions if version.get("version_type") == "release"]
+    latest_stable = stable[0] if stable else None
+    baseline = None
+    if compare_version:
+        baseline = next((version for version in versions if version.get("version_number") == compare_version), None)
+        if baseline is None:
+            raise ValueError(f"Modrinth version not found: {compare_version}")
+    elif current in stable:
+        position = stable.index(current)
+        baseline = stable[position + 1] if position + 1 < len(stable) else None
+    elif current:
+        baseline = next(
+            (
+                version
+                for version in stable
+                if version.get("date_published", "") < current.get("date_published", "")
+            ),
+            None,
+        )
+
+    comparison = None
+    if baseline:
+        baseline_files = baseline.get("files", [])
+        if current_file:
+            current_suffix = Path(current_file.get("filename", "")).suffix.lower()
+            candidates = [
+                item
+                for item in baseline_files
+                if bool(item.get("primary")) == bool(current_file.get("primary"))
+                and Path(item.get("filename", "")).suffix.lower() == current_suffix
+                and item.get("file_type") == current_file.get("file_type")
+            ]
+            if len(candidates) != 1:
+                raise ValueError(
+                    f"Could not identify one matching artifact in Modrinth version "
+                    f"{baseline.get('version_number')} for {current_file.get('filename')}"
+                )
+            file = candidates[0]
+        else:
+            file = next((item for item in baseline_files if item.get("primary")), None)
+            file = file or (baseline_files[0] if len(baseline_files) == 1 else None)
+            if file is None:
+                raise ValueError(
+                    f"Could not identify a baseline artifact in Modrinth version "
+                    f"{baseline.get('version_number')}"
+                )
+        if file:
+            cache = Path.home() / "AppData/Local/minecraft-datapack-wiki/versions" / project_slug
+            cache.mkdir(parents=True, exist_ok=True)
+            baseline_path = cache / file["filename"]
+            expected = file.get("hashes", {}).get("sha512")
+            valid = baseline_path.exists() and (
+                not expected or hashlib.sha512(baseline_path.read_bytes()).hexdigest() == expected
+            )
+            if not valid:
+                request = urllib.request.Request(file["url"], headers={"User-Agent": USER_AGENT})
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    content = response.read()
+                if expected and hashlib.sha512(content).hexdigest() != expected:
+                    raise ValueError(f"Hash verification failed for {file['filename']}")
+                baseline_path.write_bytes(content)
+            comparison = compare_pack_zips(pack_path, baseline_path)
+            comparison.update(
+                {
+                    "currentVersion": current.get("version_number") if current else pack_path.name,
+                    "currentFile": current_file.get("filename") if current_file else pack_path.name,
+                    "baselineVersion": baseline.get("version_number"),
+                    "baselineFile": file["filename"],
+                }
+            )
+
+    def release_record(version):
+        return {
+            "id": version.get("id"),
+            "name": version.get("name"),
+            "version": version.get("version_number"),
+            "type": version.get("version_type"),
+            "published": version.get("date_published"),
+            "gameVersions": version.get("game_versions", []),
+            "changelog": version.get("changelog") or "",
+            "featured": version.get("featured", False),
+            "current": bool(current and version.get("id") == current.get("id")),
+        }
+
+    return {
+        "project": {
+            "id": project.get("id"),
+            "slug": project.get("slug"),
+            "title": project.get("title"),
+            "url": f"https://modrinth.com/datapack/{project.get('slug')}",
+            "description": project.get("description"),
+        },
+        "latestStable": latest_stable.get("version_number") if latest_stable else None,
+        "latestPublished": versions[0].get("version_number") if versions else None,
+        "currentVersion": current.get("version_number") if current else None,
+        "releases": [release_record(version) for version in versions],
+        "comparison": comparison,
+    }
+
+
+def build(
+    pack_path: Path,
+    output: Path,
+    fetch_wiki_icons=False,
+    reuse_site=None,
+    modrinth_project=None,
+    compare_version=None,
+) -> None:
     pack_path = pack_path.resolve()
     output = output.resolve()
+    if compare_version and not modrinth_project:
+        raise ValueError("--compare-version requires --modrinth-project")
     if not pack_path.is_file():
         raise FileNotFoundError(pack_path)
     with tempfile.TemporaryDirectory(prefix="datapack-wiki-") as temporary:
@@ -842,13 +1674,40 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
         pack = Pack(Path(temporary))
         recipes = parse_recipes(pack)
         foods = parse_food(pack, recipes)
-        acquisition = parse_acquisition(pack, recipes)
+        trades = parse_trades(pack)
+        acquisition = parse_acquisition(pack, recipes, trades)
+        places = parse_places(pack, acquisition)
+        archaeology = parse_archaeology(pack)
+        fishing = parse_fishing(pack)
+        releases = (
+            modrinth_history(modrinth_project, pack_path, compare_version)
+            if modrinth_project else None
+        )
 
         output.mkdir(parents=True, exist_ok=True)
         assets = Assets(pack, output, reuse_site, fetch_wiki_icons)
         image_dir = output / "images"
         image_dir.mkdir(parents=True, exist_ok=True)
         assets.apply(recipes)
+        icon_records = [
+            item
+            for trade in trades
+            for item in [*trade["costs"], trade["result"], *trade["bundleContents"]]
+        ]
+        icon_records.extend(
+            item
+            for site in archaeology
+            for entry in site["entries"]
+            for item in ([entry] if entry["kind"] == "Item" else []) + entry["resolvedItems"]
+        )
+        icon_records.extend(item for place in places["locations"] for item in place["items"])
+        icon_records.extend(
+            item
+            for record in fishing["tables"]
+            for entry in record["entries"]
+            for item in ([entry] if entry["kind"] == "Item" else []) + entry["resolvedItems"]
+        )
+        assets.apply_item_icons(icon_records)
         recipe_map = {recipe["id"]: recipe for recipe in recipes}
         for food in foods:
             first = next((recipe_map[item] for item in food["recipes"] if item in recipe_map), None)
@@ -857,7 +1716,26 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
         blessings = parse_blessings(pack, recipes)
         enchantments = parse_enchantments(pack, recipes, blessings)
         advancements = parse_advancements(pack)
+        for advancement in advancements:
+            advancement["icon"] = (
+                assets.item_icon(advancement["iconId"], advancement.get("iconModelId"))
+                if advancement.get("iconId") else None
+            )
+        item_icons = {item["key"]: item.get("icon") for item in items}
+        for enchantment in enchantments:
+            for equipment in enchantment["equipment"]:
+                equipment["icon"] = item_icons.get(equipment["itemKey"])
         guides = parse_guides()
+        spoilers = build_spoilers(
+            recipes,
+            items,
+            blessings,
+            advancements,
+            guides["progression"],
+            places,
+            guides["differences"],
+            trades,
+        )
         for recipe in recipes:
             recipe.pop("_components", None)
 
@@ -881,9 +1759,15 @@ def build(pack_path: Path, output: Path, fetch_wiki_icons=False, reuse_site=None
             "advancements": advancements,
             "progression": guides["progression"],
             "differences": guides["differences"],
+            "spoilers": spoilers,
             "mechanics": mechanics,
             "overrides": overrides,
             "acquisition": acquisition,
+            "trades": trades,
+            "places": places,
+            "archaeology": archaeology,
+            "fishing": fishing,
+            "releaseHistory": releases,
             "foodItems": foods,
             "items": items,
             "foodEffects": sorted(

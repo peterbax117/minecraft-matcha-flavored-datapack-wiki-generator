@@ -16,6 +16,14 @@ def parser() -> argparse.ArgumentParser:
     build_command.add_argument("--output", type=Path, required=True)
     build_command.add_argument("--fetch-wiki-icons", action="store_true")
     build_command.add_argument("--reuse-site", type=Path)
+    build_command.add_argument(
+        "--modrinth-project",
+        help="Fetch release history and compare this ZIP with its previous stable release.",
+    )
+    build_command.add_argument(
+        "--compare-version",
+        help="Override the Modrinth baseline version used for comparison.",
+    )
 
     serve_command = subcommands.add_parser("serve", help="Serve a generated wiki.")
     serve_command.add_argument("--site", type=Path, required=True)
@@ -32,7 +40,8 @@ def main() -> None:
             output=args.output,
             fetch_wiki_icons=args.fetch_wiki_icons,
             reuse_site=args.reuse_site,
+            modrinth_project=args.modrinth_project,
+            compare_version=args.compare_version,
         )
     else:
         serve(args.site, args.timeout_minutes, not args.no_browser)
-
