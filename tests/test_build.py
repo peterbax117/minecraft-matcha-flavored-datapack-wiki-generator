@@ -75,15 +75,17 @@ class BuildTests(unittest.TestCase):
         self.assertNotIn("example:trade/unstaged", spoilers["stages"]["trade"])
 
     def test_build_optimum_builds_drops_unmatched_curated_ids(self):
-        result = build_optimum_builds(enchantments=[], blessings=[], foods=[])
+        result = build_optimum_builds(enchantments=[], blessings=[], foods=[], items=[])
         self.assertTrue(result["personas"])
         for persona in result["personas"]:
             self.assertEqual(persona["enchantments"], [])
             self.assertEqual(persona["blessings"], [])
             self.assertEqual(persona["consumables"], [])
+            self.assertEqual(persona["armor"], [])
         self.assertIsNotNone(result["allAround"])
         self.assertEqual(result["allAround"]["enchantments"], [])
         self.assertEqual(result["allAround"]["blessings"], [])
+        self.assertEqual(result["allAround"]["armor"], [])
 
     def test_build_optimum_builds_resolves_matching_curated_ids(self):
         enchantments = [{"id": "main:conduit_power", "name": "Conduit Power"}]
@@ -100,7 +102,16 @@ class BuildTests(unittest.TestCase):
                 "recipes": ["food:golden_carrot_cupcake"],
             }
         ]
-        result = build_optimum_builds(enchantments, blessings, foods)
+        items = [
+            {
+                "key": "variant:leather-boots",
+                "id": "minecraft:leather_boots",
+                "name": "Sturdy Leather Boots",
+                "icon": "images/boots.png",
+                "outputOf": ["crafting:sturdy_leather_boots"],
+            }
+        ]
+        result = build_optimum_builds(enchantments, blessings, foods, items)
         exploring = next(persona for persona in result["personas"] if persona["id"] == "exploring")
         self.assertIn(
             {"id": "main:conduit_power", "name": "Conduit Power", "reason": exploring["enchantments"][0]["reason"]},
@@ -117,6 +128,21 @@ class BuildTests(unittest.TestCase):
         self.assertIn(
             {"key": "food:abc123", "name": "Golden Carrot Cupcake", "reason": exploring["consumables"][0]["reason"]},
             exploring["consumables"],
+        )
+        self.assertEqual(len(exploring["armor"]), 1)
+        sturdy_leather = exploring["armor"][0]
+        self.assertEqual(sturdy_leather["id"], "sturdy_leather")
+        self.assertEqual(
+            sturdy_leather["pieces"],
+            [
+                {
+                    "slot": "boots",
+                    "key": "variant:leather-boots",
+                    "name": "Sturdy Leather Boots",
+                    "id": "minecraft:leather_boots",
+                    "icon": "images/boots.png",
+                }
+            ],
         )
 
     def test_compare_version_requires_modrinth_project(self):

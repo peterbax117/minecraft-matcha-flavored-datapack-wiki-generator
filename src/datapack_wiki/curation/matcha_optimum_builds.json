@@ -1,4 +1,68 @@
 {
+  "armorMaterials": {
+    "sturdy_leather": {
+      "title": "Sturdy Leather",
+      "summary": "An early, cheap leather upgrade path with built-in Feather Falling, Projectile Protection, and Traversal on the boots for fast, safe overland travel.",
+      "pieces": {
+        "helmet": "crafting:sturdy_leather_helmet",
+        "chestplate": "crafting:sturdy_leather_chestplate",
+        "leggings": "crafting:sturdy_leather_pants",
+        "boots": "crafting:sturdy_leather_boots"
+      }
+    },
+    "hepatizon": {
+      "title": "Hepatizon",
+      "summary": "A cheap copper-alloy upgrade path with a small built-in movement speed bonus on every piece, ideal before better armor is available.",
+      "pieces": {
+        "helmet": "smithing_table:bronze_helmet",
+        "chestplate": "smithing_table:bronze_chestplate",
+        "leggings": "smithing_table:bronze_leggings",
+        "boots": "smithing_table:bronze_boots",
+        "elytra": "smithing_table:bronze_elytra"
+      }
+    },
+    "shakudo": {
+      "title": "Shakudo",
+      "summary": "A copper-alloy upgrade path built around Cleanse Armor (removing debuffs per slot), Magic Protection, and a passive per-hit regeneration bonus.",
+      "pieces": {
+        "helmet": "smithing_table:shakudo_helmet",
+        "chestplate": "smithing_table:shakudo_chestplate",
+        "leggings": "smithing_table:shakudo_leggings",
+        "boots": "smithing_table:shakudo_boots",
+        "elytra": "smithing_table:shakudo_elytra"
+      }
+    },
+    "steel": {
+      "title": "Steel",
+      "summary": "An iron-alloy upgrade path stacking Blast Protection across every piece, purpose-built for surviving creepers, TNT, and other explosive damage.",
+      "pieces": {
+        "helmet": "smithing_table:steel_helmet",
+        "chestplate": "smithing_table:steel_chestplate",
+        "leggings": "smithing_table:steel_leggings",
+        "boots": "smithing_table:steel_boots"
+      }
+    },
+    "electrum": {
+      "title": "Electrum",
+      "summary": "A diamond-alloy upgrade path granting Warding Armour plus a full-set bonus of up to four hearts of Absorption, built for tanking dangerous mob fights.",
+      "pieces": {
+        "helmet": "smithing_table:electrum_helmet",
+        "chestplate": "smithing_table:electrum_chestplate",
+        "leggings": "smithing_table:electrum_leggings",
+        "boots": "smithing_table:electrum_boots"
+      }
+    },
+    "adamant": {
+      "title": "Adamant",
+      "summary": "The top netherite-tier upgrade path: Divinity, Unbreaking, and Protection on every piece, with a set bonus that shortens the Regeneration/Absorption cooldown from 30 to 20 seconds.",
+      "pieces": {
+        "helmet": "smithing_table:adamant_helmet",
+        "chestplate": "smithing_table:adamant_chestplate",
+        "leggings": "smithing_table:adamant_leggings",
+        "boots": "smithing_table:adamant_boots"
+      }
+    }
+  },
   "personas": [
     {
       "id": "exploring",
@@ -53,6 +117,12 @@
           "recipe": "food:melon_sorbet",
           "reason": "Longest available Fire Resistance duration (10 minutes) as backup Nether or lava-crossing insurance."
         }
+      ],
+      "armor": [
+        {
+          "material": "sturdy_leather",
+          "reason": "Cheap, early, and purpose-built for exploring: Feather Falling 3 and Traversal on the boots plus stacked Projectile Protection, all before diamond gear is available."
+        }
       ]
     },
     {
@@ -95,6 +165,12 @@
         {
           "recipe": "food:golden_carrot_cupcake",
           "reason": "Longest available Night Vision duration (20 minutes) for cave mining without placing torches everywhere."
+        }
+      ],
+      "armor": [
+        {
+          "material": "hepatizon",
+          "reason": "Cheap copper-alloy armor with a small movement speed bonus on every piece, keeping mining and building runs fast without spending diamonds on protection."
         }
       ]
     },
@@ -159,6 +235,20 @@
           "recipe": "food:baked_golden_apple",
           "reason": "Absorption plus layered Regeneration for immediate sustain mid-fight."
         }
+      ],
+      "armor": [
+        {
+          "material": "adamant",
+          "reason": "The best overall armor in the pack: Divinity, Unbreaking, and Protection on every piece, plus a full-set bonus that shortens the Regeneration/Absorption cooldown to 20 seconds."
+        },
+        {
+          "material": "electrum",
+          "reason": "Warding Armour plus a full-set bonus of up to four hearts of Absorption make this the strongest option against Warding-type enemies and other dangerous single fights."
+        },
+        {
+          "material": "steel",
+          "reason": "Blast Protection stacks across every piece, making this the safest choice for creeper, TNT, and other explosive-heavy encounters."
+        }
       ]
     }
   ],
@@ -187,6 +277,12 @@
       {
         "id": "blessings:mending",
         "reason": "Passive repair from experience keeps any tool, weapon, or armor piece usable indefinitely."
+      }
+    ],
+    "armor": [
+      {
+        "material": "shakudo",
+        "reason": "Cleanse Armor removes debuffs per slot, plus Magic Protection and passive per-hit regeneration, making it a strong sustain choice for any playstyle."
       }
     ]
   }

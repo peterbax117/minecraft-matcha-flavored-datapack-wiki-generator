@@ -204,6 +204,13 @@ if (
 }
 if (
   context.window.MATCHA_DATA.optimumBuilds &&
+  context.window.MATCHA_DATA.optimumBuilds.personas.some((persona) => persona.armor && persona.armor.length) &&
+  !elements.get("optimum-builds-results").innerHTML.includes("optimum-armor-list")
+) {
+  throw new Error("Optimum builds armor sets did not render");
+}
+if (
+  context.window.MATCHA_DATA.optimumBuilds &&
   context.window.MATCHA_DATA.optimumBuilds.personas.some((persona) => persona.blessings.length)
 ) {
   elements.get("spoiler-mode").value = "minimal";
