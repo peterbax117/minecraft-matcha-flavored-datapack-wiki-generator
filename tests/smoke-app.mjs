@@ -200,14 +200,14 @@ if (
   context.window.MATCHA_DATA.optimumBuilds.personas.length &&
   !elements.get("optimum-builds-results").innerHTML.includes("optimum-persona")
 ) {
-  throw new Error("Optimum builds catalogue did not render");
+  throw new Error("Recommended builds catalogue did not render");
 }
 if (
   context.window.MATCHA_DATA.optimumBuilds &&
   context.window.MATCHA_DATA.optimumBuilds.personas.some((persona) => persona.armor && persona.armor.length) &&
   !elements.get("optimum-builds-results").innerHTML.includes("optimum-armor-list")
 ) {
-  throw new Error("Optimum builds armor sets did not render");
+  throw new Error("Recommended builds armor sets did not render");
 }
 if (
   context.window.MATCHA_DATA.optimumBuilds &&
@@ -222,7 +222,7 @@ if (
       )
     )
   ) {
-    throw new Error("Minimal spoiler mode exposed an Optimum builds Blessing pick");
+    throw new Error("Minimal spoiler mode exposed a Recommended builds Blessing pick");
   }
   elements.get("spoiler-mode").value = "complete";
   elements.get("spoiler-mode").onchange();
@@ -233,7 +233,7 @@ if (
       )
     )
   ) {
-    throw new Error("Complete spoiler mode did not restore Optimum builds Blessing picks");
+    throw new Error("Complete spoiler mode did not restore Recommended builds Blessing picks");
   }
 }
 if (
