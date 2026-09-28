@@ -9,6 +9,7 @@ from datapack_wiki.builder import (
     Pack,
     build,
     build_optimum_builds,
+    apply_item_notes,
     build_spoilers,
     compare_pack_zips,
 )
@@ -73,6 +74,21 @@ class BuildTests(unittest.TestCase):
         self.assertIn("main:tutorial/secret", spoilers["hidden"]["advancement"])
         self.assertEqual(spoilers["stages"]["trade"]["example:trade/staged"], 6)
         self.assertNotIn("example:trade/unstaged", spoilers["stages"]["trade"])
+
+    def test_apply_item_notes_attaches_curated_notes_by_recipe(self):
+        items = [
+            {"key": "variant:warding", "outputOf": ["crafting:warding_stone"]},
+            {"key": "base:minecraft:stone", "outputOf": []},
+        ]
+        applied = apply_item_notes(items)
+        self.assertEqual(applied, 1)
+        notes = items[0]["notes"]
+        self.assertTrue(notes["summary"])
+        self.assertTrue(notes["sections"])
+        for section in notes["sections"]:
+            for entry in section["entries"]:
+                self.assertIn(entry["provenance"], {"extracted", "derived"})
+        self.assertNotIn("notes", items[1])
 
     def test_build_optimum_builds_drops_unmatched_curated_ids(self):
         result = build_optimum_builds(enchantments=[], blessings=[], foods=[], items=[])

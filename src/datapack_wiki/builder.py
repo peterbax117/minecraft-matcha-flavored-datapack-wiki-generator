@@ -1321,6 +1321,24 @@ def build_spoilers(recipes, items, blessings, advancements, progression, places,
     }
 
 
+def apply_item_notes(items):
+    path = PACKAGE_ROOT / "curation/matcha_item_notes.json"
+    if not path.exists():
+        return 0
+    curation = json.loads(path.read_text(encoding="utf-8"))
+    applied = 0
+    for note in curation.get("items", []):
+        for item in items:
+            if note["recipe"] in item.get("outputOf", []):
+                item["notes"] = {
+                    "summary": note.get("summary", ""),
+                    "sections": note.get("sections", []),
+                    "sources": note.get("sources", []),
+                }
+                applied += 1
+    return applied
+
+
 def build_optimum_builds(enchantments, blessings, foods, items):
     path = PACKAGE_ROOT / "curation/matcha_optimum_builds.json"
     if not path.exists():
@@ -1829,6 +1847,7 @@ def build(
             first = next((recipe_map[item] for item in food["recipes"] if item in recipe_map), None)
             food["icon"] = first.get("icon") if first else None
         items = build_items(pack, recipes, foods, acquisition)
+        apply_item_notes(items)
         blessings = parse_blessings(pack, recipes)
         enchantments = parse_enchantments(pack, recipes, blessings)
         advancements = parse_advancements(pack)

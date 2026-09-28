@@ -102,6 +102,14 @@ if (
 ) {
   throw new Error("Fishing catalogue did not render");
 }
+const notedItem = context.window.MATCHA_DATA.items.find((item) => item.notes);
+if (notedItem) {
+  context.openCatalogItem(notedItem.key);
+  const html = elements.get("obtain-results").innerHTML;
+  if (!html.includes("How it works") || !html.includes("item-notes-list")) {
+    throw new Error("Curated item notes did not render on the item page");
+  }
+}
 const stagedItemKey = Object.keys(context.window.MATCHA_DATA.spoilers.stages.item)[0];
 if (stagedItemKey) context.openCatalogItem(stagedItemKey);
 elements.get("spoiler-mode").value = "minimal";

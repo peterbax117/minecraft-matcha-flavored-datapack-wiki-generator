@@ -1,0 +1,51 @@
+{
+  "policy": "Notes are keyed by the recipe that creates the item. Each entry is 'extracted' (stated directly by a pack file) or 'derived' (inferred from how several commands interact).",
+  "items": [
+    {
+      "recipe": "crafting:warding_stone",
+      "summary": "A placeable defensive turret. It becomes a Lodestone that damages and slows undead and pillagers nearby while healing villagers, pets, golems, and players.",
+      "sections": [
+        {
+          "heading": "Obtaining and placing",
+          "entries": [
+            {"text": "The recipe unlocks the first time you hold a Nazar (Glistering Melon Slice). Crafting it grants the Holy Turret goal advancement in the Nether branch.", "provenance": "extracted"},
+            {"text": "The crafted item is a spawn egg that places an invisible, invulnerable marker. On placement the marker sets a Lodestone at its position, plays a quiet Wither spawn sound, and emits soul-fire and sculk-soul particles.", "provenance": "extracted"}
+          ]
+        },
+        {
+          "heading": "Effects",
+          "entries": [
+            {"text": "Damages the nearest target within 14 blocks for 7 damage (3.5 hearts). The damage type bypasses armor.", "provenance": "extracted"},
+            {"text": "Damage repeats on a cycle of about half a second, controlled by a 0.5 second stopwatch check. The exact firing rate is not confirmed.", "provenance": "derived"},
+            {"text": "Applies Slowness III to every target within 26 blocks, refreshed continuously while the stone stands.", "provenance": "extracted"},
+            {"text": "Gives Regeneration I to villagers, wandering traders, iron and snow golems, wolves, cats, and players within 16 blocks whenever none of them already has Regeneration.", "provenance": "extracted"},
+            {"text": "When a Wither is nearby, damage to the nearest target drops from 7 to 2.", "provenance": "derived"}
+          ]
+        },
+        {
+          "heading": "Targets",
+          "entries": [
+            {"text": "Wither, Phantom, Pillager, Zombie, Zombie Villager, Zombified Piglin, Zoglin, Drowned, Husk, Zombie Nautilus, Skeleton, Stray, Wither Skeleton, Bogged, and Parched.", "provenance": "extracted"},
+            {"text": "Creepers, spiders, endermen, and other mobs not on this list are unaffected. Pillagers are included even though they are not undead.", "provenance": "extracted"}
+          ]
+        },
+        {
+          "heading": "Removal and limits",
+          "entries": [
+            {"text": "Breaking the Lodestone destroys the Warding Stone. The Lodestone drop is removed and 1 Blaze Powder drops instead, so the stone is not recovered.", "provenance": "extracted"},
+            {"text": "A Warding Stone inside a Trial Chamber is removed and detonates as instant TNT when a player enters the chamber.", "provenance": "extracted"}
+          ]
+        }
+      ],
+      "sources": [
+        "data/crafting/recipe/warding_stone.json",
+        "data/main/advancement/recipe_unlocks/nazar.json",
+        "data/main/advancement/hell/obtain_warding_stone.json",
+        "data/main/advancement/mechanics/enter_trial_chamber.json",
+        "data/main/function/mechanic/warding_stone/",
+        "data/main/tags/entity_type/warding_stone_targets.json",
+        "data/main/tags/entity_type/villager_friends.json"
+      ]
+    }
+  ]
+}
