@@ -58,20 +58,21 @@ The classification file is
 source-backed progression gates. Content without an explicit classification
 remains visible rather than being guessed.
 
-After validation, publish the same build to the final OneDrive location:
+After validation, publish the same build to the final local site folder. Keep it outside
+OneDrive: cloud photo libraries index every image in a synced folder.
 
 ```powershell
 uv run --project C:\code\minecraft-datapack-wiki-generator datapack-wiki build `
   --pack "C:\Users\peterbax\Downloads\Matcha_Flavoured_1_12.zip" `
-  --output "$env:USERPROFILE\OneDrive\Copilot\Matcha Flavoured Wiki" `
-  --reuse-site "$env:USERPROFILE\OneDrive\Copilot\Matcha Flavoured Wiki"
+  --output "$env:USERPROFILE\Minecraft Wikis\Matcha Flavoured Wiki" `
+  --reuse-site "$env:USERPROFILE\Minecraft Wikis\Matcha Flavoured Wiki"
 ```
 
 ## Serve
 
 ```powershell
 python -m datapack_wiki serve `
-  --site "$env:USERPROFILE\OneDrive\Copilot\Matcha Flavoured Wiki" `
+  --site "$env:USERPROFILE\Minecraft Wikis\Matcha Flavoured Wiki" `
   --timeout-minutes 30
 ```
 
